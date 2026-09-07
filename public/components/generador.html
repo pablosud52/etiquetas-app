@@ -1,0 +1,370 @@
+<div class="max-w-[1700px] mx-auto space-y-6 select-none">
+
+  <!-- BARRA SUPERIOR DE CONTROLES Y PARÁMETROS -->
+  <div class="bg-slate-800/90 p-4 rounded-2xl border border-slate-700/60 shadow-xl">
+    <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+      
+      <!-- SECCIÓN 1 (IZQUIERDA): TÍTULO Y DESCRIPCIÓN -->
+      <div class="shrink-0 max-w-sm">
+        <h2 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+          <span>Impresión de Etiquetas</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Selecciona la plantilla, elige los productos y emite el pliego A4 listo para imprimir o refilar</p>
+      </div>
+
+      <!-- SECCIÓN 2 (CENTRO): AVISO INTEGRADO DE OBSOLESCENCIA / LISTA AL DÍA -->
+      <div id="gen-obsolescencia-alert" class="w-auto max-w-2xl mx-auto transition-all duration-300">
+        <!-- Inyectado dinámicamente -->
+      </div>
+
+      <!-- SECCIÓN 3 (DERECHA): BOTONERA DE ACCIÓN -->
+      <div class="flex items-center gap-3 shrink-0">
+        
+        <!-- Botón Dividido: Líneas de Guía de Corte + Configuración -->
+        <div id="btn-guia-corte-group" class="h-14 bg-blue-600 border border-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-stretch overflow-hidden shrink-0">
+          <!-- Botón Principal: Toggle Guías de Corte -->
+          <button id="btn-guia-corte-toggle" onclick="toggleGuiaCorteBtn()" class="px-3.5 flex items-center gap-2.5 hover:bg-white/10 transition-colors cursor-pointer" title="Alternar líneas de guía de corte">
+            <!-- SVG Tijera Vertical -->
+            <svg class="w-5 h-5 shrink-0" width="20" height="20" style="min-width: 20px; min-height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="19" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="M8.2 16.8L16 4"></path>
+              <path d="M15.8 16.8L8 4"></path>
+              <circle cx="12" cy="11.5" r="0.8" fill="currentColor"></circle>
+            </svg>
+            <div class="flex flex-col text-left leading-tight">
+              <span class="text-xs font-bold" id="btn-guia-corte-label">Guías</span>
+              <span class="text-[11px] font-semibold opacity-90" id="btn-guia-corte-sub">de Corte</span>
+            </div>
+          </button>
+
+          <!-- Divisor Vertical -->
+          <div id="btn-guia-corte-divider" class="w-[1px] bg-blue-400/40 my-2.5"></div>
+
+          <!-- Botón Secundario: Engranaje (Ajustes) -->
+          <button id="btn-guia-corte-settings" onclick="openGuiaCorteSettings()" class="px-3.5 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer text-white" title="Ajustes de Guías de Corte">
+            <!-- SVG Engranaje Nítido y Visible -->
+            <svg class="w-5 h-5 shrink-0" width="20" height="20" style="min-width: 20px; min-height: 20px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Botón Imprimir / PDF -->
+        <button id="btn-pdf-gen" onclick="exportarPDF()" class="h-14 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-3 cursor-pointer shrink-0" title="Generar pliego PDF e imprimir">
+          <svg class="w-8 h-8 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+          </svg>
+          <div class="flex flex-col text-left leading-tight">
+            <span class="text-xs font-extrabold tracking-tight">Generar</span>
+            <span class="text-xs font-extrabold tracking-tight">PDF /</span>
+            <span class="text-xs font-extrabold tracking-tight">Imprimir</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- GRILLA PRINCIPAL: SELECCIÓN DE PRODUCTOS (50%) E IMPOSICIÓN A4 (50%) -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- PANEL IZQUIERDO: LISTA DE PRODUCTOS Y SELECCIÓN DE PLANTILLA (50% DEL ANCHO) -->
+    <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-xl flex flex-col space-y-4 max-h-[820px]">
+      
+      <!-- Encabezado: LISTA DE PRODUCTOS + PLANTILLA DE ETIQUETA -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <!-- SELECTOR a la izquierda -->
+          <div class="flex items-center gap-2 flex-1 max-w-sm">
+            <label for="gen-plantilla" class="text-[11px] font-bold uppercase tracking-wider text-slate-300 shrink-0">
+              SELECTOR:
+            </label>
+            <select id="gen-plantilla" onchange="handleGeneradorTemplateChange(this.value)" class="flex-1 max-w-[250px] px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 font-medium cursor-pointer transition-all">
+              <option value="">-- Seleccionar Plantilla --</option>
+            </select>
+          </div>
+          <!-- LISTA DE PRODUCTOS a la derecha -->
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider shrink-0">
+            LISTA DE PRODUCTOS
+          </h3>
+        </div>
+
+        <!-- Buscador Multicriterio Dinámico -->
+        <div class="relative">
+          <input type="text" id="gen-search" oninput="onGeneradorSearchInput()" onkeydown="if(event.key==='Escape') clearGeneradorSearch()" placeholder="Buscar por código, producto, descripción o specs..." class="w-full px-3 py-2 pl-9 pr-9 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+          <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <button id="gen-search-clear" onclick="clearGeneradorSearch()" type="button" class="hidden absolute right-2.5 top-2 p-0.5 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition-colors cursor-pointer" title="Limpiar búsqueda (Esc)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <!-- Botonera: [ Limpiar selección ] a la izquierda, Contador de tabla en el medio, Contador de lote a la derecha -->
+        <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-700/40 text-xs">
+          <div class="flex items-center gap-3">
+            <button onclick="clearBatchSelection()" id="btn-clear-selection" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded font-semibold text-[11px] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+              [ Limpiar selección ]
+            </button>
+            <div class="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+              <span id="gen-table-count" class="font-mono text-slate-200 font-bold bg-slate-900 px-2.5 py-1 rounded border border-slate-700/60 shadow-inner">0 / 0</span>
+            </div>
+          </div>
+          <div id="gen-selected-summary" class="text-xs font-mono text-emerald-400 font-bold flex items-center gap-1.5">
+            <span>0 seleccionados</span>
+            <span class="text-emerald-500/70 font-normal">/</span>
+            <span>0 <span class="font-normal text-emerald-400/90">para imprimir</span></span>
+          </div>
+        </div>
+
+        <!-- Banner informativo cuando no hay plantilla seleccionada -->
+        <div id="gen-no-tpl-banner" class="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300 text-xs flex items-center gap-2 transition-all">
+          <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Selecciona una plantilla en el <strong>SELECTOR</strong> superior para habilitar la selección de productos.</span>
+        </div>
+      </div>
+
+      <!-- Tabla de Productos Seleccionables (Espacio amplio al 50% de pantalla) -->
+      <div class="flex-1 overflow-auto bg-slate-900/60 rounded-xl border border-slate-700/50">
+        <table class="w-full text-left text-xs text-slate-300 border-collapse">
+          <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700/60 sticky top-0 z-10 text-[10px]">
+            <tr>
+              <th class="px-2 py-2.5 w-8 text-center">
+                <input type="checkbox" id="chk-toggle-all" onchange="selectAllProducts(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0 cursor-pointer">
+              </th>
+              <th class="px-2 py-2.5 w-16 text-center">COPIAS</th>
+              <th class="px-2.5 py-2.5 font-semibold">CÓD 1</th>
+              <th class="px-2.5 py-2.5 font-semibold">CÓD 2</th>
+              <th class="px-3 py-2.5 font-semibold">DESCRIPCIÓN</th>
+              <th class="px-2.5 py-2.5 text-center font-semibold">MON.</th>
+              <th class="px-3 py-2.5 text-right font-semibold">PÚBLICO</th>
+              <th class="px-3 py-2.5 text-right font-semibold">DISTRIB.</th>
+            </tr>
+          </thead>
+          <tbody id="gen-prod-tbody" class="divide-y divide-slate-700/30">
+            <tr>
+              <td colspan="8" class="text-center py-6 text-slate-500">Cargando catálogo...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- PANEL DERECHO: VISTA PREVIA Y PAGINADOR (50% DEL ANCHO) -->
+    <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-xl flex flex-col space-y-4 max-h-[820px]">
+      
+      <!-- CABECERA: VISTA PREVIA + BADGE CAPACIDAD (IZQ) Y PAGINADOR (DER) -->
+      <div class="w-full flex items-center justify-between gap-3 pb-3 border-b border-slate-700/60 text-xs">
+        <div class="flex items-center gap-3">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-white">
+            VISTA PREVIA
+          </h3>
+          <div id="gen-capacidad-badge" class="px-3.5 py-1 bg-slate-900 border border-slate-700 rounded-lg font-mono text-emerald-400 font-bold text-xs shadow-inner">
+            <span id="gen-capacidad-text">- etiq / hoja A4</span>
+          </div>
+        </div>
+
+        <!-- PAGINADOR DE VISTAS PREVIAS -->
+        <div class="flex items-center gap-2 bg-slate-900/80 px-2.5 py-1 rounded-xl border border-slate-700/60 text-xs">
+          <button onclick="changePage(-1)" id="btn-prev-page" class="px-2.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            ‹ Anterior
+          </button>
+          <span id="page-num-display" class="font-mono text-slate-200 font-bold px-2">Página &lt; 1 / 1 &gt;</span>
+          <button onclick="changePage(1)" id="btn-next-page" class="px-2.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            Siguiente ›
+          </button>
+        </div>
+      </div>
+
+      <!-- HOJA VIRTUAL A4 (FONDO BLANCO) -->
+      <div id="print-sheet-viewport" class="flex-1 w-full overflow-hidden flex items-center justify-center bg-slate-950/70 p-3 rounded-xl border border-slate-700/50 min-h-[520px] relative">
+        
+        <!-- WRAPPER ESCALADO AUTO-FIT PARA HOJA A4 -->
+        <div id="gen-sheet-scaler" class="relative flex items-center justify-center">
+          <!-- HOJA A4 CON PROPORCIONES REALES 210mm x 297mm -->
+          <div id="gen-print-sheet" class="bg-white shadow-2xl relative overflow-hidden rounded-[2px]" style="width: 210mm; height: 297mm; box-sizing: border-box; flex-shrink: 0;">
+            
+            <!-- ESTADO VACÍO PROVISORIO -->
+            <div id="gen-empty-state" class="text-center p-12 text-slate-400" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%;">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h10M7 11h10M7 15h10M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+              </svg>
+              <p class="font-bold text-slate-600 text-lg">No hay pliego generado</p>
+              <p class="text-xs text-slate-500 mt-1">Selecciona una plantilla y los productos con cantidad de copias a imprimir.</p>
+            </div>
+
+            <!-- CONTENEDOR DINÁMICO DE LA HOJA A4 (PLIEGO) -->
+            <div id="gen-sheet-content" class="absolute inset-0"></div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL AJUSTES GUÍAS DE CORTE (OPERADOR) CON LIENZO INTERACTIVO Y ZOOM -->
+<div id="modal-gen-corte-settings" onclick="closeGuiaCorteSettings()" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 z-50 select-none">
+  <div onclick="event.stopPropagation()" class="bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl relative w-full max-w-[1150px] h-[88vh] max-h-[820px] flex flex-col overflow-hidden">
+    
+    <!-- ENCABEZADO SUPERIOR DEL MODAL -->
+    <div class="flex justify-between items-center px-6 py-3.5 border-b border-slate-700/60 bg-slate-900/90 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+            <span>Ajustes de Guías de Corte (Impresión)</span>
+            <span id="modal-corte-tpl-badge" class="px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded font-mono text-[11px] border border-blue-700/50 font-semibold">Plantilla</span>
+          </h3>
+          <p class="text-[11px] text-slate-400">Configura el estilo visual y disposición de las líneas de guillotinado para el pliego A4</p>
+        </div>
+      </div>
+      <button onclick="closeGuiaCorteSettings()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer" title="Cerrar (Esc)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <!-- CUERPO PRINCIPAL DIVIDIDO EN 2 COLUMNAS (CONTROLES + LIENZO VECTORIAL) -->
+    <div class="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+      
+      <!-- COLUMNA IZQUIERDA: CONTROLES DE CORTE -->
+      <div class="w-full md:w-[370px] p-5 flex flex-col space-y-4 border-r border-slate-700/60 overflow-y-auto shrink-0 bg-slate-900/90">
+        
+        <!-- Controles de Estilo General -->
+        <div class="space-y-3 text-xs">
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-slate-400 mb-1 font-medium text-[11px]">Estilo Línea</label>
+              <select id="gen-corte-tipo" onchange="renderModalCortePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs cursor-pointer focus:outline-none focus:border-blue-500">
+                <option value="solid">Línea Continua</option>
+                <option value="dashed">Entre Cortada</option>
+                <option value="dotted">Punteada Fina</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1 font-medium text-[11px]">Grosor (px)</label>
+              <input type="number" id="gen-corte-grosor" value="1" min="1" max="5" oninput="renderModalCortePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1 font-medium text-[11px]">Color</label>
+              <input type="color" id="gen-corte-color" value="#94a3b8" oninput="renderModalCortePreview()" class="w-full h-8 bg-slate-950 border border-slate-700 rounded-lg p-0.5 cursor-pointer">
+            </div>
+          </div>
+
+          <!-- Líneas Horizontales -->
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-700/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-slate-200 text-xs flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                Líneas Horizontales
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="gen-corte-h-activo" checked onchange="renderModalCortePreview()" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0 cursor-pointer">
+                <span class="text-slate-400 text-[11px]">Activar</span>
+              </label>
+            </div>
+            <div>
+              <label class="block text-slate-400 text-[11px] mb-1 font-medium">Posicionamiento en Hoja</label>
+              <select id="gen-corte-h-modo" onchange="renderModalCortePreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs cursor-pointer focus:outline-none focus:border-blue-500">
+                <option value="pegadas">Pegadas a las etiquetas (Bordes sup. e inf.)</option>
+                <option value="centro">Al centro del espaciado (Gap Y)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Líneas Verticales -->
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-700/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-slate-200 text-xs flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                Líneas Verticales
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="gen-corte-v-activo" checked onchange="renderModalCortePreview()" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0 cursor-pointer">
+                <span class="text-slate-400 text-[11px]">Activar</span>
+              </label>
+            </div>
+            <div>
+              <label class="block text-slate-400 text-[11px] mb-1 font-medium">Posicionamiento en Hoja</label>
+              <select id="gen-corte-v-modo" onchange="renderModalCortePreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs cursor-pointer focus:outline-none focus:border-blue-500">
+                <option value="pegadas">Pegadas a las etiquetas (Bordes izq. y der.)</option>
+                <option value="centro">Al centro del espaciado (Gap X)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción al pie de la columna izquierda -->
+        <div class="mt-auto pt-4 border-t border-slate-700/60 flex items-center justify-between gap-2">
+          <button type="button" onclick="resetGuiaCorteSettingsToTemplate()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer border border-slate-700" title="Restablecer a los valores guardados en la plantilla">
+            Restablecer
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeGuiaCorteSettings()" class="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-xs font-semibold transition cursor-pointer">
+              Cancelar
+            </button>
+            <button type="button" onclick="applyGuiaCorteSettings()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>Aplicar Ajustes</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: LIENZO VECTORIAL A4 EN TIEMPO REAL CON ZOOM Y PAN CON GUANTE -->
+      <div class="flex-1 flex flex-col p-4 bg-slate-950/60 overflow-hidden h-full">
+        
+        <!-- Barra de Estado del Lienzo y Controles de Zoom -->
+        <div class="flex items-center justify-between pb-3 text-xs text-slate-300 shrink-0 gap-2">
+          <div class="flex items-center gap-2">
+            <span class="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 text-xs">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Lienzo en Tiempo Real
+            </span>
+            <span id="modal-corte-metric-badge" class="px-2 py-0.5 bg-slate-800 rounded font-mono text-[11px] text-slate-300 border border-slate-700">A4 (21.0 x 29.7 cm)</span>
+          </div>
+
+          <!-- Controles de Zoom -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5">
+              <button onclick="adjustModalCorteZoom(-0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Reducir zoom">-</button>
+              <span id="modal-corte-zoom-display" class="px-2.5 font-mono text-[11px] text-slate-300 min-w-[45px] text-center font-semibold">100%</span>
+              <button onclick="adjustModalCorteZoom(0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Aumentar zoom">+</button>
+            </div>
+            <button onclick="resetModalCorteZoom()" class="flex items-center gap-1 px-2.5 py-1 bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg text-[11px] font-semibold cursor-pointer transition-all" title="Restablecer zoom al 100% original">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              100%
+            </button>
+          </div>
+        </div>
+
+        <!-- Viewport interactivo para arrastre con guante (Grab / Grabbing) -->
+        <div id="modal-corte-viewport" class="flex-1 bg-slate-950/90 rounded-xl border border-slate-800 overflow-auto flex items-center justify-center p-6 relative cursor-grab select-none">
+          <!-- HOJA A4 VECTORIAL -->
+          <div id="modal-corte-sheet" class="bg-white shadow-2xl relative rounded overflow-hidden transition-transform">
+            <!-- Etiquetas vacías e imposición con líneas de corte en tiempo real -->
+          </div>
+        </div>
+
+        <!-- Ayuda ergonómica en el pie -->
+        <div class="pt-2 text-[11px] text-slate-400 flex items-center justify-between shrink-0">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path></svg>
+            <span>Arrastra con el mouse (guante) para mover el pliego libremente.</span>
+          </span>
+          <span class="text-slate-500 font-mono text-[10px]">Ctrl + Rueda para Zoom</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>

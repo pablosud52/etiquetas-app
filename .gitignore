@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Archivos de empaquetado/distribución (ej. generados por build-exe.js)
+dist/
+
+# Archivos de usuarios / cargas locales
+uploads/
+
+# Base de datos SQLite local
+*.db
+*.sqlite
+*.sqlite3
+
+# Variables de entorno y credenciales
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Cobertura de pruebas (Jest)
+coverage/
+.nyc_output/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

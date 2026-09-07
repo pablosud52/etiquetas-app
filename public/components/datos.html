@@ -1,0 +1,281 @@
+<div class="max-w-7xl mx-auto space-y-6 select-none">
+
+  <!-- SECCIÓN DE CONTROL EN 2 COLUMNAS: IMPORTACIÓN DE PRODUCTOS + OBSOLESCENCIA -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- TARJETA 1: IMPORTACIÓN DE PRODUCTOS (EXCEL) CON BARRA DE PROGRESO -->
+    <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-xl flex flex-col justify-between space-y-4">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+          <div class="flex items-center gap-2">
+            <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Importación de Productos</h3>
+              <p class="text-xs text-slate-400">Formatos soportados: .xlsx y .xls</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ALINEACIÓN EN UNA SOLA LÍNEA: INPUT + BOTÓN IMPORTAR -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Subir Nueva Lista de Precios</label>
+          <div class="flex flex-col sm:flex-row items-center gap-2.5">
+            <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="flex-1 w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600 bg-slate-900 border border-slate-700 rounded-lg cursor-pointer">
+            <button id="btn-upload-excel" onclick="uploadExcelFile()" class="w-full sm:w-auto px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-md flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <span>Importar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BARRA DE PROGRESO DE CARGA EXCEL -->
+        <div id="excel-progress-container" class="hidden space-y-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/50">
+          <div class="flex justify-between items-center text-[11px] font-semibold text-slate-300">
+            <span id="excel-progress-status-text">Importando productos...</span>
+            <span id="excel-progress-percent" class="font-mono text-emerald-400">0%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
+            <div id="excel-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-0 transition-all duration-200"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen de Metadatos Alineados en una sola línea horizontal -->
+      <div class="pt-3 border-t border-slate-700/60 space-y-2 text-xs">
+        <div class="flex justify-between items-center text-slate-400">
+          <div class="flex items-center gap-1 truncate max-w-[50%]">
+            <span>Archivo activo:</span>
+            <span id="active-filename-display" class="font-bold text-slate-200 truncate">Ninguno</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span>Última carga:</span>
+            <span id="active-filedate-display" class="font-bold text-slate-200">-</span>
+          </div>
+        </div>
+
+        <!-- Botones de archivo: Descargar + Eliminar archivo -->
+        <div class="flex gap-2">
+          <button onclick="downloadCurrentExcel()" class="flex-1 py-2 bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Descargar archivo</span>
+          </button>
+          <button id="btn-delete-excel" onclick="deleteExcelFile()" title="Eliminar el archivo Excel almacenado (no borra el listado)" class="px-3 py-2 bg-red-950/60 hover:bg-red-900/70 text-red-400 hover:text-red-300 border border-red-800/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <span>Eliminar archivo</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- TARJETA 2: ALERTA DE OBSOLESCENCIA -->
+    <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-xl flex flex-col justify-between space-y-4">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+          <div class="flex items-center gap-2">
+            <div class="p-2 bg-amber-500/10 rounded-lg text-amber-400 border border-amber-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Alerta de Obsolescencia</h3>
+              <p class="text-xs text-slate-400">Control de vigencia de precios</p>
+            </div>
+          </div>
+          <span id="obsolescencia-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-700 text-slate-300">
+            Consultando...
+          </span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Tiempo de Alerta</label>
+          <div class="flex gap-2">
+            <select id="select-dias-gracia" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-medium focus:outline-none focus:border-blue-500 cursor-pointer">
+              <option value="5">5 días</option>
+              <option value="10">10 días</option>
+              <option value="15">15 días</option>
+              <option value="20">20 días</option>
+              <option value="25">25 días</option>
+              <option value="30">30 días</option>
+            </select>
+            <button onclick="saveObsolescenciaConfig()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-colors shadow-md shrink-0 cursor-pointer flex items-center gap-1">
+              <span>💾 Guardar</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5">Si la lista de productos supera este período sin actualizarse, el sistema mostrará la advertencia en el Generador.</p>
+        </div>
+      </div>
+
+      <!-- Estado en tiempo real de la vigencia -->
+      <div class="pt-3 border-t border-slate-700/60 bg-slate-900/40 p-3 rounded-lg border border-slate-700/40 text-xs space-y-1.5">
+        <div class="flex justify-between items-center text-slate-400">
+          <span>Antigüedad de la lista:</span>
+          <span id="dias-transcurridos-display" class="font-bold text-white">- días</span>
+        </div>
+        <p id="obsolescencia-msg-display" class="text-[11px] text-slate-400 leading-tight">Cargando estado...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLA DE PRODUCTOS ACTUALES CON CABECERA INTEGRADA Y ALTO AMPLIADO -->
+  <div class="bg-slate-800/80 rounded-2xl border border-slate-700/60 shadow-xl overflow-hidden">
+    <!-- Header Integrado de Productos con Título y Botones Superior Derecho -->
+    <div class="p-5 border-b border-slate-700/60 bg-slate-800/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-white tracking-tight">Gestión de Productos</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Administra los productos de la lista de precios, realiza búsquedas y modificaciones</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="btn-vaciar-catalogo" onclick="confirmClearAllData()" class="px-3.5 py-2 bg-red-900/40 hover:bg-red-800/60 text-red-200 border border-red-500/40 text-xs font-bold rounded-lg transition-colors shadow-md cursor-pointer flex items-center gap-1.5">
+          <span>🗑️ Vaciar listado</span>
+        </button>
+        <button onclick="openProductModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-md shadow-blue-600/20 flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>+ Nuevo Producto</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Búsqueda y Conteo -->
+    <div class="p-4 border-b border-slate-700/60 bg-slate-800/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div class="relative w-full max-w-md">
+        <input type="text" id="datos-search" oninput="filterDatosTable()" placeholder="Buscar por COD 1, COD 2, título o especificaciones..." class="w-full px-3.5 py-2 pl-9 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      </div>
+      <span id="datos-count-info" class="text-xs font-bold text-emerald-400 font-mono">Total: 0 productos</span>
+    </div>
+
+    <!-- CONTENEDOR CON SCROLLBAR INTERNO Y ALTO AMPLIADO (AL MENOS 5-6 PRODUCTOS CÓMODOS POR PANTALLA) -->
+    <div class="overflow-x-auto overflow-y-auto min-h-[480px] max-h-[680px]">
+      <table class="w-full text-left text-xs text-slate-300 border-collapse">
+        <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700/80 sticky top-0 z-10 text-[11px]">
+          <tr>
+            <th class="px-4 py-3.5">COD 1</th>
+            <th class="px-4 py-3.5">COD 2</th>
+            <th class="px-4 py-3.5 min-w-[200px]">Title (Producto)</th>
+            <th class="px-4 py-3.5 min-w-[180px]">Especificaciones</th>
+            <th class="px-3 py-3.5 text-center">Moneda</th>
+            <th class="px-4 py-3.5 text-right">PUBLICO (c/IVA)</th>
+            <th class="px-4 py-3.5 text-right">DISTRIB (s/IVA)</th>
+            <th class="px-4 py-3.5">Etiqueta Tamaño</th>
+            <th class="px-4 py-3.5 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="datos-table-body" class="divide-y divide-slate-700/40">
+          <tr>
+            <td colspan="9" class="px-6 py-8 text-center text-slate-500">Cargando lista de productos...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- VENTANA MODAL FLOTANTE DE PROGRESO (VACIAR LISTADO / PROCESAMIENTO) -->
+<div id="datos-progress-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 text-center">
+    <div class="p-3 bg-red-500/20 text-red-300 rounded-full w-14 h-14 mx-auto flex items-center justify-center animate-bounce">
+      <svg id="progress-modal-icon" class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+    </div>
+
+    <div class="space-y-1">
+      <h3 id="progress-modal-title" class="text-lg font-bold text-white">Procesando...</h3>
+      <p id="progress-modal-status-text" class="text-xs text-slate-400">Limpiando la base de datos de productos...</p>
+    </div>
+
+    <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-700">
+      <div id="progress-modal-bar" class="bg-gradient-to-r from-red-500 to-amber-500 h-full w-0 transition-all duration-200"></div>
+    </div>
+
+    <span id="progress-modal-percent" class="block text-xs font-mono font-bold text-amber-400">0%</span>
+  </div>
+</div>
+
+<!-- MODAL CREAR / EDITAR PRODUCTO -->
+<div id="product-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative space-y-4">
+    <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+      <h3 id="modal-product-title" class="text-base font-bold text-white">Nuevo Producto</h3>
+      <button onclick="closeProductModal()" class="text-slate-400 hover:text-white transition-colors cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <form id="product-form" onsubmit="handleProductSubmit(event)" class="space-y-4 text-xs">
+      <input type="hidden" id="prod-id">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">COD 1</label>
+          <input type="text" id="prod-cod-1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">COD 2</label>
+          <input type="text" id="prod-cod-2" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">Title / Descripción del Producto</label>
+        <input type="text" id="prod-title" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+      </div>
+
+      <!-- Especificaciones 1 a 5 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Spec 1</label>
+          <input type="text" id="prod-spec-1" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Spec 2</label>
+          <input type="text" id="prod-spec-2" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Spec 3</label>
+          <input type="text" id="prod-spec-3" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Spec 4</label>
+          <input type="text" id="prod-spec-4" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Spec 5</label>
+          <input type="text" id="prod-spec-5" class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-white">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">Moneda</label>
+          <input type="text" id="prod-moneda" placeholder="$ / USD" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">PUBLICO (c/IVA)</label>
+          <input type="number" step="0.01" id="prod-publico" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-emerald-400 font-semibold focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">DISTRIBUIDOR (s/IVA)</label>
+          <input type="number" step="0.01" id="prod-distrib" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-purple-400 font-semibold focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">Etiqueta Tamaño</label>
+        <input type="text" id="prod-etiqueta-tamano" placeholder="Ej: 100x50mm" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="flex justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <button type="button" onclick="closeProductModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+          Cancelar
+        </button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-md shadow-blue-600/20 cursor-pointer">
+          Guardar Producto
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

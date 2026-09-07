@@ -1,0 +1,578 @@
+<div class="h-full flex flex-col space-y-4 w-full max-w-full px-2 select-none">
+
+  <!-- BARRA SUPERIOR DE GESTIÓN Y ACCIONES DE PLANTILLA -->
+  <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-slate-700/60 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center flex-wrap gap-3">
+      <!-- Selector de Plantilla Existente -->
+      <div class="flex items-center gap-2">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Plantilla:</label>
+        <select id="editor-template-select" onchange="loadTemplateForEdit(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-blue-500 cursor-pointer min-w-[190px]">
+          <option value="">-- Cargar Plantilla --</option>
+        </select>
+      </div>
+
+      <!-- Nombre de Plantilla -->
+      <div class="flex items-center gap-2">
+        <input type="text" id="tpl-nombre" placeholder="Nombre de plantilla (ej: Oferta 10.0x5.0)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 min-w-[210px]">
+      </div>
+    </div>
+
+    <!-- PESTAÑAS INTEGRADAS EN BARRA SUPERIOR (SEGMENTED CONTROL) -->
+    <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-700/70 shadow-inner">
+      <button id="tab-btn-1" onclick="switchEditorTab(1)" class="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer bg-blue-600 text-white shadow-md flex items-center gap-2" title="Estructura física, dimensiones unitarias e imposición de pliego A4">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+        <span>Estructura A4</span>
+      </button>
+      <button id="tab-btn-2" onclick="switchEditorTab(2)" class="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 flex items-center gap-2" title="Diseño visual de etiqueta, tipografía, fondos y mapeo de campos">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+        <span>Diseño Visual</span>
+      </button>
+    </div>
+
+    <!-- Botonera de Acciones -->
+    <div class="flex items-center flex-wrap gap-2">
+      <!-- Botón Cargar Fuente Especial -->
+      <button onclick="openFontModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer" title="Subir fuentes personalizadas TTF/OTF/WOFF">
+        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg>
+        <span>+ Fuentes</span>
+      </button>
+
+      <!-- Nueva Plantilla -->
+      <button onclick="createNewTemplate()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+        Nueva
+      </button>
+
+      <!-- Eliminar -->
+      <button onclick="confirmDeleteTemplate()" id="btn-delete-tpl" class="px-3 py-1.5 bg-red-900/30 hover:bg-red-800/50 text-red-300 border border-red-500/30 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+        Eliminar
+      </button>
+
+      <!-- Guardar -->
+      <button onclick="saveTemplate()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-md shadow-blue-600/20 flex items-center gap-1.5 cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+        <span>Guardar Plantilla</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL DIVIDIDO (LAYOUT FIJO SIN DILATACIÓN VERTICAL) -->
+  <div id="editor-main-container" class="flex-1 flex flex-col bg-slate-900 rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl relative h-[calc(100vh-120px)] min-h-[800px] w-full">
+
+    <!-- ======================================================== -->
+    <!-- CONTENIDO PESTAÑA 1: ESTRUCTURA, DIMENSIONES E IMPOSICIÓN A4 -->
+    <!-- ======================================================== -->
+    <div id="editor-tab-1-container" class="flex-1 flex flex-col md:flex-row gap-0 h-full w-full overflow-hidden">
+      
+      <!-- Panel Lateral Izquierdo: Controles Estructurales -->
+      <div class="w-full md:w-[420px] bg-slate-800/90 flex flex-col border-r border-slate-700/60 overflow-y-auto shrink-0 z-10 h-full p-4 space-y-4">
+        
+        <div class="border-b border-slate-700/60 pb-3 flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+            Límites Físicos y Pliego A4
+          </span>
+          <div class="flex items-center gap-2">
+            <button onclick="toggleAllTab1Accordions(true)" class="text-[10px] text-slate-400 hover:text-slate-200 underline cursor-pointer">Desplegar todo</button>
+            <span class="text-slate-600">|</span>
+            <button onclick="toggleAllTab1Accordions(false)" class="text-[10px] text-slate-400 hover:text-slate-200 underline cursor-pointer">Plegar todo</button>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+
+          <!-- 1. Dimensiones de la Etiqueta (Acordeón Colapsado por Defecto) -->
+          <div class="accordion-item rounded-xl bg-slate-900/60 border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleAccordion('tab1-dim')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors cursor-pointer">
+              <h4 class="font-bold uppercase tracking-wider text-blue-300 text-[11px] flex items-center gap-1.5">
+                <span>📏</span> Dimensiones de Etiqueta Unitaria
+              </h4>
+              <svg id="arrow-tab1-dim" class="w-4 h-4 text-slate-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            <div id="content-tab1-dim" class="accordion-content p-3.5 space-y-3 pt-0 border-t border-slate-700/30 hidden">
+              <div class="grid grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Largo (cm)</label>
+                  <input type="number" id="tpl-ancho" value="10.0" min="1.0" max="200.0" step="0.1" oninput="updateLabelDimensions()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Alto (cm)</label>
+                  <input type="number" id="tpl-alto" value="5.0" min="1.0" max="200.0" step="0.1" oninput="updateLabelDimensions()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Imposición A4 (Matriz de Impresión) (Acordeón Colapsado por Defecto) -->
+          <div class="accordion-item rounded-xl bg-slate-900/60 border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleAccordion('tab1-matriz')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors cursor-pointer">
+              <h4 class="font-bold uppercase tracking-wider text-indigo-300 text-[11px] flex items-center gap-1.5">
+                <span>🧩</span> Imposición de Pliego A4 (Matriz)
+              </h4>
+              <svg id="arrow-tab1-matriz" class="w-4 h-4 text-slate-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <div id="content-tab1-matriz" class="accordion-content p-3.5 space-y-3 pt-0 border-t border-slate-700/30 hidden">
+              <div class="grid grid-cols-2 gap-3 text-xs pt-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">Columnas</label>
+                  <input type="number" id="tpl-matriz-cols" value="2" min="1" max="10" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Filas</label>
+                  <input type="number" id="tpl-matriz-rows" value="4" min="1" max="20" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Margen Superior (cm)</label>
+                  <input type="number" id="tpl-matriz-margin-top" value="1.0" min="0" max="20" step="0.1" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Margen Izquierdo (cm)</label>
+                  <input type="number" id="tpl-matriz-margin-left" value="1.0" min="0" max="20" step="0.1" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Espacio Horizontal (cm)</label>
+                  <input type="number" id="tpl-matriz-gap-x" value="0.5" min="0" max="10" step="0.1" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Espacio Vertical (cm)</label>
+                  <input type="number" id="tpl-matriz-gap-y" value="0.5" min="0" max="10" step="0.1" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Guías de Guillotinado / Corte (Acordeón Colapsado por Defecto) -->
+          <div class="accordion-item rounded-xl bg-slate-900/60 border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleAccordion('tab1-corte')" class="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors cursor-pointer">
+              <h4 class="font-bold uppercase tracking-wider text-emerald-300 text-[11px] flex items-center gap-1.5">
+                <span>✂️</span> Guías de Guillotinado / Corte
+              </h4>
+              <svg id="arrow-tab1-corte" class="w-4 h-4 text-slate-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <div id="content-tab1-corte" class="accordion-content p-3.5 space-y-3 pt-0 border-t border-slate-700/30 hidden">
+              <!-- Estilo General de Línea -->
+              <div class="grid grid-cols-3 gap-2 pt-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">Estilo Línea</label>
+                  <select id="tpl-matriz-corte-tipo" onchange="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs">
+                    <option value="solid">Línea Continua</option>
+                    <option value="dashed">Entre Cortada (Segmentada)</option>
+                    <option value="dotted">Punteada Fina</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Grosor (px)</label>
+                  <input type="number" id="tpl-matriz-corte-grosor" value="1" min="1" max="5" oninput="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs font-mono">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Color</label>
+                  <input type="color" id="tpl-matriz-corte-color" value="#94a3b8" oninput="renderMatrizA4Tab1()" class="w-full h-8 bg-slate-900 border border-slate-700 rounded-lg p-0.5 cursor-pointer">
+                </div>
+              </div>
+
+              <!-- Líneas Horizontales -->
+              <div class="p-2.5 bg-slate-900/80 rounded-lg border border-slate-700/40 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-300 text-[11px]">Líneas Horizontales</span>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="tpl-matriz-corte-h-activo" checked onchange="renderMatrizA4Tab1()" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+                    <span class="text-slate-400 text-[11px]">Activar</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="block text-slate-400 text-[10px] mb-1">Posicionamiento</label>
+                  <select id="tpl-matriz-corte-h-modo" onchange="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
+                    <option value="pegadas">Pegadas a las etiquetas</option>
+                    <option value="centro">Al centro del espaciado (Gap Y)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Líneas Verticales -->
+              <div class="p-2.5 bg-slate-900/80 rounded-lg border border-slate-700/40 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-300 text-[11px]">Líneas Verticales</span>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="tpl-matriz-corte-v-activo" checked onchange="renderMatrizA4Tab1()" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+                    <span class="text-slate-400 text-[11px]">Activar</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="block text-slate-400 text-[10px] mb-1">Posicionamiento</label>
+                  <select id="tpl-matriz-corte-v-modo" onchange="renderMatrizA4Tab1()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
+                    <option value="pegadas">Pegadas a las etiquetas</option>
+                    <option value="centro">Al centro del espaciado (Gap X)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Botón Dedicado: Guardar Matriz (Siempre visible al pie de la columna) -->
+        <div class="pt-2 shrink-0 border-t border-slate-700/40 mt-auto">
+          <button onclick="saveMatrizA4Config()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+            <span>[ Guardar Matriz ]</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Área Central: Lienzo Vectorial A4 en Blanco (Ocupa 100% del Ancho y Alto Libre) -->
+      <div class="flex-1 flex flex-col p-4 overflow-hidden bg-slate-950/40 h-full w-full">
+        
+        <!-- Header de Métricas A4 + Controles de Zoom -->
+        <div class="flex items-start justify-between pb-3 text-xs text-slate-300 shrink-0 gap-2">
+          <!-- Bloque Izquierdo: Título y Línea Inferior de Badges -->
+          <div class="flex flex-col items-start gap-2">
+            <span class="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Lienzo Vectorial A4 en Blanco (21.0 x 29.7 cm)
+            </span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span id="tab1-badge-count" class="px-2.5 py-1 bg-slate-800 rounded-lg font-mono text-[11px] text-emerald-400 border border-slate-700 font-bold">8 etiquetas / pliego</span>
+              <span id="tab1-badge-efficiency" class="px-2.5 py-1 bg-blue-900/40 text-blue-300 rounded-lg font-mono text-[11px] border border-blue-700/50 font-bold">Aprovechamiento: --%</span>
+              <span id="tab1-badge-waste" class="px-2.5 py-1 bg-amber-900/30 text-amber-300 rounded-lg font-mono text-[11px] border border-amber-700/40 font-bold">Desperdicio: --%</span>
+            </div>
+          </div>
+
+          <!-- Controles de Zoom Tab 1 -->
+          <div class="flex items-center gap-2 ml-auto shrink-0">
+            <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5">
+              <button onclick="adjustTab1Zoom(-0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Reducir zoom">-</button>
+              <span id="tab1-zoom-level-display" class="px-2.5 font-mono text-[11px] text-slate-300 min-w-[45px] text-center font-semibold">100%</span>
+              <button onclick="adjustTab1Zoom(0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Aumentar zoom">+</button>
+            </div>
+            <button onclick="resetTab1Zoom()" class="flex items-center gap-1 px-2.5 py-1 bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg text-[11px] font-semibold cursor-pointer transition-all" title="Restablecer zoom a 100%">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              100%
+            </button>
+          </div>
+        </div>
+
+        <!-- Viewport con Centrado de Hoja A4 Maximizado en Altura -->
+        <div id="tab1-canvas-viewport" class="flex-1 bg-slate-900/60 rounded-xl border border-slate-700/60 overflow-auto flex items-center justify-center p-4 relative min-h-0 w-full">
+          
+          <!-- HOJA A4 VECTORIAL -->
+          <div id="tab1-a4-preview-sheet" class="bg-white shadow-2xl relative transition-all rounded overflow-hidden">
+            <!-- Etiquetas vacías delimitadas e imposición renderizadas dinámicamente por JS -->
+          </div>
+
+        </div>
+
+        <div class="pt-2 text-[11px] text-slate-500 shrink-0">
+          <span>Retroalimentación estructural inmediata: verifica márgenes, número de cortes y aprovechamiento de superficie antes del diseño gráfico.</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- CONTENIDO PESTAÑA 2: DISEÑO VISUAL Y MAPEO DE CAMPOS      -->
+    <!-- ======================================================== -->
+    <div id="editor-tab-2-container" class="flex-1 flex flex-col md:flex-row gap-0 h-full w-full overflow-hidden hidden">
+
+      <!-- PANEL LATERAL IZQUIERDO: CONTROLES ESTÉTICOS / MENÚ ACORDEÓN -->
+      <div id="editor-left-panel" class="w-full md:w-[420px] bg-slate-800/90 flex flex-col border-r border-slate-700/60 shrink-0 z-10 p-4 space-y-3" style="max-height: calc(100vh - 120px - 40px); overflow-y: auto;">
+        
+        <div class="border-b border-slate-700/60 pb-3 flex items-center justify-between bg-slate-800 sticky top-0 z-20">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+            Diseño Visual y Campos
+          </span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="undoAction()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-colors" title="Deshacer (Ctrl+Z)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+            </button>
+            <button onclick="redoAction()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-colors" title="Rehacer (Ctrl+Y)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ACORDEÓN DE CONTROLES: FLEX-COL W-FULL -->
+        <div id="editor-accordion-container" class="space-y-3 flex-1 flex flex-col w-full">
+
+          <!-- SECCIÓN IMAGEN DE FONDO (3 SLOTS) -->
+          <div class="accordion-item rounded-xl bg-slate-900/40 border border-slate-700/40 overflow-hidden w-full">
+            <button onclick="toggleAccordion('sec-fondo')" class="w-full p-3 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors cursor-pointer">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Sección 1 - Imagen de Fondo (3 Slots)
+              </span>
+              <svg id="arrow-sec-fondo" class="w-4 h-4 text-slate-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="content-sec-fondo" class="accordion-content p-3.5 space-y-3 pt-0 border-t border-slate-700/30 hidden">
+              <p class="text-[11px] text-slate-400">Almacena hasta 3 imágenes de fondo por plantilla (.png, .jpg, .svg) y selecciona la activa:</p>
+
+              <!-- 3 SLOTS INDEPENDIENTES -->
+              <div class="grid grid-cols-3 gap-2">
+                <!-- Slot 0 -->
+                <div id="bg-slot-card-0" onclick="selectActiveBgSlot(0)" class="bg-slate-900 border-2 border-emerald-500 rounded-xl p-2 flex flex-col items-center justify-between text-center relative cursor-pointer group transition-all min-h-[120px]">
+                  <span class="absolute top-1 left-1.5 text-[9px] font-extrabold uppercase px-1 rounded bg-emerald-500 text-slate-950">Slot 1</span>
+                  <div id="bg-slot-thumb-0" class="w-full h-14 bg-slate-800 rounded border border-slate-700/60 my-auto flex items-center justify-center overflow-hidden bg-cover bg-center">
+                    <span class="text-[10px] text-slate-500">Vacío</span>
+                  </div>
+                  <div class="flex items-center gap-1 w-full mt-1.5">
+                    <label onclick="event.stopPropagation()" class="flex-1 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-[10px] cursor-pointer text-center" title="Subir / Cambiar imagen">
+                      Subir
+                      <input type="file" accept="image/*" class="hidden" onchange="handleUploadBgSlot(0, event)">
+                    </label>
+                    <button onclick="event.stopPropagation(); downloadBgSlot(0)" class="p-1 bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 rounded text-[10px]" title="Descargar imagen de esta ranura">⬇️</button>
+                    <button onclick="event.stopPropagation(); deleteBgSlot(0)" class="p-1 bg-red-900/30 hover:bg-red-800/60 text-red-300 rounded text-[10px]" title="Eliminar ranura">✕</button>
+                  </div>
+                </div>
+
+                <!-- Slot 1 -->
+                <div id="bg-slot-card-1" onclick="selectActiveBgSlot(1)" class="bg-slate-900 border-2 border-slate-700 rounded-xl p-2 flex flex-col items-center justify-between text-center relative cursor-pointer group transition-all min-h-[120px]">
+                  <span class="absolute top-1 left-1.5 text-[9px] font-extrabold uppercase px-1 rounded bg-slate-700 text-slate-300">Slot 2</span>
+                  <div id="bg-slot-thumb-1" class="w-full h-14 bg-slate-800 rounded border border-slate-700/60 my-auto flex items-center justify-center overflow-hidden bg-cover bg-center">
+                    <span class="text-[10px] text-slate-500">Vacío</span>
+                  </div>
+                  <div class="flex items-center gap-1 w-full mt-1.5">
+                    <label onclick="event.stopPropagation()" class="flex-1 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-[10px] cursor-pointer text-center" title="Subir / Cambiar imagen">
+                      Subir
+                      <input type="file" accept="image/*" class="hidden" onchange="handleUploadBgSlot(1, event)">
+                    </label>
+                    <button onclick="event.stopPropagation(); downloadBgSlot(1)" class="p-1 bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 rounded text-[10px]" title="Descargar imagen de esta ranura">⬇️</button>
+                    <button onclick="event.stopPropagation(); deleteBgSlot(1)" class="p-1 bg-red-900/30 hover:bg-red-800/60 text-red-300 rounded text-[10px]" title="Eliminar ranura">✕</button>
+                  </div>
+                </div>
+
+                <!-- Slot 2 -->
+                <div id="bg-slot-card-2" onclick="selectActiveBgSlot(2)" class="bg-slate-900 border-2 border-slate-700 rounded-xl p-2 flex flex-col items-center justify-between text-center relative cursor-pointer group transition-all min-h-[120px]">
+                  <span class="absolute top-1 left-1.5 text-[9px] font-extrabold uppercase px-1 rounded bg-slate-700 text-slate-300">Slot 3</span>
+                  <div id="bg-slot-thumb-2" class="w-full h-14 bg-slate-800 rounded border border-slate-700/60 my-auto flex items-center justify-center overflow-hidden bg-cover bg-center">
+                    <span class="text-[10px] text-slate-500">Vacío</span>
+                  </div>
+                  <div class="flex items-center gap-1 w-full mt-1.5">
+                    <label onclick="event.stopPropagation()" class="flex-1 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-[10px] cursor-pointer text-center" title="Subir / Cambiar imagen">
+                      Subir
+                      <input type="file" accept="image/*" class="hidden" onchange="handleUploadBgSlot(2, event)">
+                    </label>
+                    <button onclick="event.stopPropagation(); downloadBgSlot(2)" class="p-1 bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 rounded text-[10px]" title="Descargar imagen de esta ranura">⬇️</button>
+                    <button onclick="event.stopPropagation(); deleteBgSlot(2)" class="p-1 bg-red-900/30 hover:bg-red-800/60 text-red-300 rounded text-[10px]" title="Eliminar ranura">✕</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center text-xs pt-1">
+                <span id="active-bg-info" class="text-[11px] text-slate-400">Ranura activa: Slot 1</span>
+                <button onclick="downloadActiveBg()" class="text-[11px] text-slate-500 hover:text-slate-300 underline cursor-pointer">Descargar Seleccionado</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN SELECTOR DE PROPIEDADES (HABILITADOR) -->
+          <div class="accordion-item rounded-xl bg-slate-900/40 border border-slate-700/40 overflow-hidden w-full">
+            <button onclick="toggleAccordion('sec-selector-prop')" class="w-full p-3 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors cursor-pointer">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                Sección 2 - Selector de Propiedades
+              </span>
+              <svg id="arrow-sec-selector-prop" class="w-4 h-4 text-slate-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="content-sec-selector-prop" class="accordion-content p-3.5 space-y-2 pt-0 border-t border-slate-700/30 hidden">
+              <p class="text-[11px] text-slate-400">Activa o desactiva las líneas de texto para mostrarlas en el lienzo y en el menú:</p>
+              
+              <div class="grid grid-cols-2 gap-2 pt-1" id="props-switches-container">
+                <!-- Se generan los switches dinámicamente -->
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTENEDOR DINÁMICO DE ACORDEÓN PARA LAS PROPIEDADES ACTIVAS -->
+          <div id="dynamic-property-accordions" class="space-y-3 pt-1 flex flex-col w-full">
+            <!-- Inyectado dinámicamente según campos activados -->
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- PANEL CENTRAL / DERECHO: LIENZO 2D + TABLA DE PRODUCTOS -->
+      <div id="editor-right-panel" class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-950/40 h-full">
+
+        <!-- PARTE SUPERIOR: LIENZO / CANVAS INTERACTIVO 2D -->
+        <div id="canvas-area-wrapper" class="flex-1 flex flex-col p-4 overflow-hidden relative">
+          
+          <!-- Barra de herramientas del Lienzo -->
+          <div class="flex items-center justify-between pb-3 text-xs text-slate-300">
+            <div class="flex items-center gap-3">
+              <span class="font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                Lienzo Interactivo Unitario
+              </span>
+              <span id="canvas-dimension-badge" class="px-2 py-0.5 bg-slate-800 rounded font-mono text-[11px] text-slate-300 border border-slate-700/60">10.0cm x 5.0cm</span>
+              
+              <!-- Botones Deshacer / Rehacer específicos del diseño visual -->
+              <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5 ml-1">
+                <button onclick="undoAction()" id="btn-undo" class="p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Deshacer diseño (Ctrl+Z)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l6-6M3 10l6 6"></path></svg>
+                </button>
+                <button onclick="redoAction()" id="btn-redo" class="p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Rehacer diseño (Ctrl+Y)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a5 5 0 00-5 5v2m15-7l-6-6m6 6l-6 6"></path></svg>
+                </button>
+              </div>
+
+              <!-- Botones Toggle Cuadrícula e Imán -->
+              <div class="flex items-center gap-1.5 ml-4">
+                <button
+                  id="btn-grid-toggle"
+                  onclick="toggleGrid()"
+                  title="Activar/desactivar cuadrícula guía (5mm). Nunca se imprime."
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16M8 4v16M14 4v16"/></svg>
+                  Cuadrícula
+                </button>
+                <button
+                  id="btn-snap-toggle"
+                  onclick="toggleSnap()"
+                  title="Activar/desactivar ajuste magnético al arrastrar elementos"
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/></svg>
+                  Imán
+                </button>
+                <!-- Hidden inputs para mantener compatibilidad con JS existente -->
+                <input type="checkbox" id="chk-grid" class="sr-only">
+                <input type="checkbox" id="chk-snap" class="sr-only">
+              </div>
+            </div>
+
+            <!-- Controles de Zoom Tab 2 -->
+            <div class="flex items-center gap-2">
+              <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5">
+                <button onclick="adjustZoom(-0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Reducir zoom">-</button>
+                <span id="zoom-level-display" class="px-2.5 font-mono text-[11px] text-slate-300 min-w-[45px] text-center font-semibold">100%</span>
+                <button onclick="adjustZoom(0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Aumentar zoom">+</button>
+              </div>
+              <button onclick="resetZoomTo100()" class="flex items-center gap-1 px-2.5 py-1 bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg text-[11px] font-semibold cursor-pointer transition-all" title="Restablecer zoom a 100%">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                100%
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTENEDOR CON SCROLL Y CENTRADO DEL CANVAS -->
+          <div id="canvas-viewport" class="flex-1 bg-slate-900/60 rounded-xl border border-slate-700/60 overflow-auto flex items-center justify-center p-6 relative">
+            
+            <!-- EL CANVAS DE LA ETIQUETA (Fondo + Textos Arrastrables) -->
+            <div id="editor-canvas" class="bg-white shadow-2xl relative transition-shadow rounded overflow-hidden select-none" style="width: 378px; height: 189px; background-size: 100% 100%; background-position: center; background-repeat: no-repeat;">
+              <!-- Capa de cuadrícula (visible solo cuando está activa) -->
+              <div id="canvas-grid-overlay" class="absolute inset-0 pointer-events-none hidden" style="z-index: 1;"></div>
+              <!-- Capa de elementos drag & drop -->
+              <div id="canvas-elements-layer" class="absolute inset-0 pointer-events-auto" style="z-index: 2;"></div>
+            </div>
+
+          </div>
+
+          <!-- Indicador de elemento seleccionado / atajos -->
+          <div class="pt-2 flex justify-between items-center text-[11px] text-slate-500">
+            <span>Consejo: Arrastra los textos en el lienzo. Usa teclas de flecha para ajuste fino (Shift+Flecha para movimiento rápido).</span>
+            <span id="selected-element-indicator" class="text-blue-400 font-medium">Ningún elemento seleccionado</span>
+          </div>
+        </div>
+
+        <!-- PARTE INFERIOR: TABLA DE PRODUCTOS PARA REVISIÓN EN TIEMPO REAL -->
+        <div id="editor-table-section" class="flex flex-col bg-slate-900/90 border-t border-slate-700/60 overflow-hidden shrink-0" style="height: 350px;">
+          
+          <!-- Header de la tabla de productos -->
+          <div class="p-2.5 px-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Prueba con Datos Reales del Catálogo</span>
+              <span class="text-[11px] text-slate-400">(Haz clic en una fila para promediar textos sobre la etiqueta)</span>
+            </div>
+
+            <div class="flex items-center gap-2 relative w-96">
+              <select id="editor-prod-tamano-select" onchange="onEditorTamanoSelectChange(this.value)" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer">
+                <option value="">-- Todos los Tamaños --</option>
+              </select>
+              <div class="relative w-1/2">
+                <input type="text" id="editor-prod-search" oninput="onEditorSearchInput()" onkeydown="if(event.key==='Escape') clearEditorSearch()" placeholder="Buscar producto..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-blue-500 pl-7 pr-7">
+                <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <button id="editor-search-clear" onclick="clearEditorSearch()" type="button" class="hidden absolute right-2 top-1.5 p-0.5 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition-colors cursor-pointer" title="Limpiar búsqueda (Esc)">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla con scroll -->
+          <div class="flex-1 overflow-auto">
+            <table class="w-full text-left text-xs text-slate-300 border-collapse">
+              <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700/60 sticky top-0 z-10 text-[11px]">
+                <tr>
+                  <th class="px-3 py-2">COD 1</th>
+                  <th class="px-3 py-2">COD 2</th>
+                  <th class="px-3 py-2 min-w-[180px]">Title</th>
+                  <th class="px-3 py-2">Specs</th>
+                  <th class="px-2 py-2">Moneda</th>
+                  <th class="px-3 py-2 text-right">PUBLICO</th>
+                  <th class="px-3 py-2 text-right">DISTRIBUIDOR</th>
+                  <th class="px-3 py-2">Tamaño</th>
+                </tr>
+              </thead>
+              <tbody id="editor-prod-tbody" class="divide-y divide-slate-700/30">
+                <tr>
+                  <td colspan="8" class="text-center py-4 text-slate-500">Cargando productos del catálogo...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: CARGA DE FUENTES ESPECIALES                      -->
+<!-- ======================================================== -->
+<div id="modal-fonts" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative space-y-4">
+    <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="p-2 bg-blue-500/20 text-blue-300 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg>
+        </div>
+        <h3 class="text-base font-bold text-white">Fuentes de Texto Especiales</h3>
+      </div>
+      <button onclick="closeFontModal()" class="text-slate-400 hover:text-white transition-colors cursor-pointer">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <form onsubmit="handleFontUploadSubmit(event)" class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">Nombre de la Familia Tipográfica (Opcional)</label>
+        <input type="text" id="font-family-name" placeholder="Ej: MiFuenteBold (Vacío para usar nombre del archivo)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+      </div>
+      <div>
+        <label class="block font-bold uppercase tracking-wider text-slate-300 mb-1">Archivo(s) de Fuente (.ttf, .otf, .woff, .woff2)</label>
+        <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" multiple required class="w-full bg-slate-900 border border-slate-700 rounded-lg text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-slate-700 file:text-white cursor-pointer">
+      </div>
+      <button type="submit" id="btn-submit-font" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors shadow-md">
+        Subir e Instalar Fuente
+      </button>
+    </form>
+
+    <div class="pt-3 border-t border-slate-700/60 space-y-2">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Fuentes Personalizadas Instaladas</h4>
+      <div id="installed-fonts-list" class="max-h-36 overflow-y-auto divide-y divide-slate-700/40 text-xs text-slate-300 bg-slate-900/60 rounded-lg p-2 border border-slate-700/40">
+        <p class="text-slate-500 text-center py-2">Cargando fuentes...</p>
+      </div>
+    </div>
+  </div>
+</div>
