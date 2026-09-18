@@ -226,51 +226,88 @@ function renderCutLinesHelper(container, p) {
   }
 }
 
+// Sincronizar parámetros de matriz A4 editados por el usuario hacia currentTemplate y refrescar
+function updateMatrizA4FromInputs() {
+  if (!currentTemplate.matriz_a4 || typeof currentTemplate.matriz_a4 !== 'object') {
+    currentTemplate.matriz_a4 = {};
+  }
+  const m = currentTemplate.matriz_a4;
+
+  const elCols = document.getElementById('tpl-matriz-cols');
+  if (elCols && elCols.value !== '') {
+    m.columnas = parseInt(elCols.value, 10) || m.columnas || 2;
+  }
+  const elRows = document.getElementById('tpl-matriz-rows');
+  if (elRows && elRows.value !== '') {
+    m.filas = parseInt(elRows.value, 10) || m.filas || 4;
+  }
+  const elMTop = document.getElementById('tpl-matriz-margin-top');
+  if (elMTop && elMTop.value !== '') {
+    let raw = parseFloat(String(elMTop.value).replace(',', '.'));
+    if (!isNaN(raw)) m.margin_top = raw > 5 ? raw / 10 : raw;
+  }
+  const elMLeft = document.getElementById('tpl-matriz-margin-left');
+  if (elMLeft && elMLeft.value !== '') {
+    let raw = parseFloat(String(elMLeft.value).replace(',', '.'));
+    if (!isNaN(raw)) m.margin_left = raw > 5 ? raw / 10 : raw;
+  }
+  const elGapX = document.getElementById('tpl-matriz-gap-x');
+  if (elGapX && elGapX.value !== '') {
+    let raw = parseFloat(String(elGapX.value).replace(',', '.'));
+    if (!isNaN(raw)) m.gap_x = raw > 3 ? raw / 10 : raw;
+  }
+  const elGapY = document.getElementById('tpl-matriz-gap-y');
+  if (elGapY && elGapY.value !== '') {
+    let raw = parseFloat(String(elGapY.value).replace(',', '.'));
+    if (!isNaN(raw)) m.gap_y = raw > 3 ? raw / 10 : raw;
+  }
+  const elCorteTipo = document.getElementById('tpl-matriz-corte-tipo');
+  if (elCorteTipo) m.corte_tipo = elCorteTipo.value || m.corte_tipo || 'solid';
+  const elCorteGrosor = document.getElementById('tpl-matriz-corte-grosor');
+  if (elCorteGrosor && elCorteGrosor.value !== '') m.corte_grosor = parseInt(elCorteGrosor.value, 10) || m.corte_grosor || 1;
+  const elCorteColor = document.getElementById('tpl-matriz-corte-color');
+  if (elCorteColor && elCorteColor.value) m.corte_color = elCorteColor.value;
+  const elCorteHActivo = document.getElementById('tpl-matriz-corte-h-activo');
+  if (elCorteHActivo) m.corte_h_activo = elCorteHActivo.checked;
+  const elCorteHModo = document.getElementById('tpl-matriz-corte-h-modo');
+  if (elCorteHModo) m.corte_h_modo = elCorteHModo.value || m.corte_h_modo || 'pegadas';
+  const elCorteVActivo = document.getElementById('tpl-matriz-corte-v-activo');
+  if (elCorteVActivo) m.corte_v_activo = elCorteVActivo.checked;
+  const elCorteVModo = document.getElementById('tpl-matriz-corte-v-modo');
+  if (elCorteVModo) m.corte_v_modo = elCorteVModo.value || m.corte_v_modo || 'pegadas';
+
+  renderMatrizA4Tab1();
+}
+
 // Renderizado de Pliego A4 Vectorial en Pestaña 1 (Estructura)
+// Función de solo lectura sobre currentTemplate.matriz_a4 (no muta ni sobreescribe el estado)
 function renderMatrizA4Tab1() {
   const sheet = document.getElementById('tab1-a4-preview-sheet');
   if (!sheet) return;
 
-  const cols = parseInt(document.getElementById('tpl-matriz-cols')?.value, 10) || currentTemplate.matriz_a4?.columnas || 2;
-  const rows = parseInt(document.getElementById('tpl-matriz-rows')?.value, 10) || currentTemplate.matriz_a4?.filas || 4;
-  let mTopRaw = parseFloat(String(document.getElementById('tpl-matriz-margin-top')?.value).replace(',', '.'));
-  let mLeftRaw = parseFloat(String(document.getElementById('tpl-matriz-margin-left')?.value).replace(',', '.'));
-  let gapXRaw = parseFloat(String(document.getElementById('tpl-matriz-gap-x')?.value).replace(',', '.'));
-  let gapYRaw = parseFloat(String(document.getElementById('tpl-matriz-gap-y')?.value).replace(',', '.'));
-  let mTop = !isNaN(mTopRaw) ? mTopRaw : (currentTemplate.matriz_a4?.margin_top ?? 1.0);
-  let mLeft = !isNaN(mLeftRaw) ? mLeftRaw : (currentTemplate.matriz_a4?.margin_left ?? 1.0);
-  let gapX = !isNaN(gapXRaw) ? gapXRaw : (currentTemplate.matriz_a4?.gap_x ?? 0.0);
-  let gapY = !isNaN(gapYRaw) ? gapYRaw : (currentTemplate.matriz_a4?.gap_y ?? 0.0);
+  if (typeof _normalizarPlantilla === 'function') {
+    _normalizarPlantilla(currentTemplate);
+  }
+  const m = currentTemplate.matriz_a4 || {};
+
+  const cols = m.columnas || 2;
+  const rows = m.filas || 4;
+  let mTop = m.margin_top ?? 1.0;
+  let mLeft = m.margin_left ?? 1.0;
+  let gapX = m.gap_x ?? 0.0;
+  let gapY = m.gap_y ?? 0.0;
   if (mTop > 5) mTop /= 10;
   if (mLeft > 5) mLeft /= 10;
   if (gapX > 3) gapX /= 10;
   if (gapY > 3) gapY /= 10;
 
-  const corteTipo = document.getElementById('tpl-matriz-corte-tipo')?.value || currentTemplate.matriz_a4?.corte_tipo || 'solid';
-  const corteGrosor = parseInt(document.getElementById('tpl-matriz-corte-grosor')?.value, 10) || currentTemplate.matriz_a4?.corte_grosor || 1;
-  const corteColor = document.getElementById('tpl-matriz-corte-color')?.value || currentTemplate.matriz_a4?.corte_color || '#94a3b8';
-
-  const corteHActivo = document.getElementById('tpl-matriz-corte-h-activo') ? document.getElementById('tpl-matriz-corte-h-activo').checked : (currentTemplate.matriz_a4?.corte_h_activo !== false);
-  const corteHModo = document.getElementById('tpl-matriz-corte-h-modo')?.value || currentTemplate.matriz_a4?.corte_h_modo || 'pegadas';
-
-  const corteVActivo = document.getElementById('tpl-matriz-corte-v-activo') ? document.getElementById('tpl-matriz-corte-v-activo').checked : (currentTemplate.matriz_a4?.corte_v_activo !== false);
-  const corteVModo = document.getElementById('tpl-matriz-corte-v-modo')?.value || currentTemplate.matriz_a4?.corte_v_modo || 'pegadas';
-
-  currentTemplate.matriz_a4 = {
-    columnas: cols,
-    filas: rows,
-    margin_top: mTop,
-    margin_left: mLeft,
-    gap_x: gapX,
-    gap_y: gapY,
-    corte_tipo: corteTipo,
-    corte_grosor: corteGrosor,
-    corte_color: corteColor,
-    corte_h_activo: corteHActivo,
-    corte_h_modo: corteHModo,
-    corte_v_activo: corteVActivo,
-    corte_v_modo: corteVModo
-  };
+  const corteTipo = m.corte_tipo || 'solid';
+  const corteGrosor = m.corte_grosor || 1;
+  const corteColor = m.corte_color || '#94a3b8';
+  const corteHActivo = m.corte_h_activo !== false;
+  const corteHModo = m.corte_h_modo || 'pegadas';
+  const corteVActivo = m.corte_v_activo !== false;
+  const corteVModo = m.corte_v_modo || 'pegadas';
 
   let labelW_cm = currentTemplate.ancho || 10.0;
   let labelH_cm = currentTemplate.alto || 5.0;
@@ -345,4 +382,5 @@ window.saveMatrizA4Config = saveMatrizA4Config;
 window.toggleAllTab1Accordions = toggleAllTab1Accordions;
 window.renderCutLinesHelper = renderCutLinesHelper;
 window.renderMatrizA4Tab1 = renderMatrizA4Tab1;
+window.updateMatrizA4FromInputs = updateMatrizA4FromInputs;
 

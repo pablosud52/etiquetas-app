@@ -543,7 +543,7 @@ function updateGuiaCorteToggleUI() {
 // =========================================================================
 
 let modalCorteZoom = 1.0;
-const MODAL_CORTE_BASE_H = 640;
+const MODAL_CORTE_BASE_H = 560;
 let isModalCortePanning = false;
 let modalCorteStartX = 0;
 let modalCorteStartY = 0;
@@ -611,6 +611,9 @@ function openGuiaCorteSettings() {
   modal.classList.remove('hidden');
   initModalCortePan();
   renderModalCortePreview();
+  setTimeout(() => {
+    fitModalCorteZoom();
+  }, 40);
 }
 
 function closeGuiaCorteSettings() {
@@ -754,8 +757,30 @@ function resetModalCorteZoom() {
   const viewport = document.getElementById('modal-corte-viewport');
   if (viewport) {
     viewport.scrollTop = 0;
-    viewport.scrollLeft = 0;
+    const maxScrollLeft = viewport.scrollWidth - viewport.clientWidth;
+    viewport.scrollLeft = maxScrollLeft > 0 ? maxScrollLeft / 2 : 0;
   }
+}
+
+// Ajustar el zoom automáticamente para que el pliego A4 completo quepa en la ventana sin recortes
+function fitModalCorteZoom() {
+  const viewport = document.getElementById('modal-corte-viewport');
+  const sheet = document.getElementById('modal-corte-sheet');
+  if (!viewport || !sheet) return;
+  const availH = viewport.clientHeight - 40;
+  const availW = viewport.clientWidth - 40;
+  if (availH <= 50 || availW <= 50) return;
+  const baseH = MODAL_CORTE_BASE_H;
+  const baseW = baseH * (21.0 / 29.7);
+  const zoomH = availH / baseH;
+  const zoomW = availW / baseW;
+  const fitVal = Math.min(zoomH, zoomW);
+  modalCorteZoom = Math.max(0.3, Math.min(2.5, parseFloat(fitVal.toFixed(2))));
+  updateModalCorteZoomDisplay();
+  applyModalCorteZoomTransform();
+  viewport.scrollTop = 0;
+  const maxScrollLeft = viewport.scrollWidth - viewport.clientWidth;
+  viewport.scrollLeft = maxScrollLeft > 0 ? maxScrollLeft / 2 : 0;
 }
 
 function updateModalCorteZoomDisplay() {
@@ -765,10 +790,22 @@ function updateModalCorteZoomDisplay() {
 
 function applyModalCorteZoomTransform() {
   const sheet = document.getElementById('modal-corte-sheet');
+  const stage = document.getElementById('modal-corte-stage');
   if (sheet) {
     sheet.style.transform = `scale(${modalCorteZoom})`;
     sheet.style.transformOrigin = 'center top';
-    sheet.style.marginBottom = modalCorteZoom > 1.0 ? `${(MODAL_CORTE_BASE_H * modalCorteZoom) - MODAL_CORTE_BASE_H + 40}px` : '0px';
+    
+    const baseW = MODAL_CORTE_BASE_H * (21.0 / 29.7);
+    const baseH = MODAL_CORTE_BASE_H;
+    
+    const scaledH = baseH * modalCorteZoom;
+    const extraH = scaledH > baseH ? (scaledH - baseH) + 40 : 20;
+    sheet.style.marginBottom = `${extraH}px`;
+    
+    if (stage) {
+      const scaledW = baseW * modalCorteZoom;
+      stage.style.minWidth = scaledW > baseW ? `${scaledW + 48}px` : '100%';
+    }
   }
 }
 

@@ -77,9 +77,10 @@ var selectedTestProduct = null;
 var customInstalledFonts = [];
 var currentZoom = 1.0;
 
+var activeEditorTab = 1;
+
 // INICIALIZACIÓN DEL MÓDULO EDITOR
 async function initEditorModule() {
-  switchEditorTab(1);
   initSplitters();
 
   if (typeof loadInstalledFonts === 'function') {
@@ -90,7 +91,25 @@ async function initEditorModule() {
   }
 
   await loadTemplateSelectOptions();
-  syncUIWithTemplate();
+
+  // Si proviene del botón "Editar Plantilla" del Generador
+  const editTplId = localStorage.getItem('edit_template_id');
+  if (editTplId) {
+    localStorage.removeItem('edit_template_id');
+    await loadTemplateById(editTplId);
+  } else {
+    // Reflejar la plantilla activa en el selector
+    const select = document.getElementById('editor-template-select') || document.getElementById('tpl-selector');
+    if (select && currentTemplate && currentTemplate.id) {
+      select.value = String(currentTemplate.id);
+    }
+    // Sincronizar todos los inputs y renders con el estado actual
+    syncUIWithTemplate();
+  }
+
+  // Restaurar la pestaña en la que estaba trabajando el usuario (1 = Estructura A4, 2 = Diseño Visual)
+  switchEditorTab(activeEditorTab || 1);
+
   if (typeof resetTab1Zoom === 'function') {
     resetTab1Zoom();
   }
@@ -288,6 +307,8 @@ function syncUIWithTemplate() {
 
 // NAVEGACIÓN Y ALTERNANCIA DE PESTAÑAS (TAB 1 VS TAB 2)
 function switchEditorTab(tabNumber) {
+  activeEditorTab = Number(tabNumber) || 1;
+
   const btnTab1 = document.getElementById('tab-btn-1') || document.getElementById('btn-editor-tab-1');
   const btnTab2 = document.getElementById('tab-btn-2') || document.getElementById('btn-editor-tab-2');
   const containerTab1 = document.getElementById('editor-tab-1-container');
@@ -565,65 +586,66 @@ function syncTemplateFromUI() {
   if (!currentTemplate.matriz_a4 || typeof currentTemplate.matriz_a4 !== 'object') {
     currentTemplate.matriz_a4 = {};
   }
+  const m = currentTemplate.matriz_a4;
 
   const elCols = document.getElementById('tpl-matriz-cols');
-  if (elCols) currentTemplate.matriz_a4.columnas = parseInt(elCols.value, 10) || 2;
+  if (elCols && elCols.value !== '') m.columnas = parseInt(elCols.value, 10) || m.columnas || 2;
 
   const elRows = document.getElementById('tpl-matriz-rows');
-  if (elRows) currentTemplate.matriz_a4.filas = parseInt(elRows.value, 10) || 4;
+  if (elRows && elRows.value !== '') m.filas = parseInt(elRows.value, 10) || m.filas || 4;
 
   const elMTop = document.getElementById('tpl-matriz-margin-top');
-  if (elMTop) {
+  if (elMTop && elMTop.value !== '') {
     let raw = parseFloat(String(elMTop.value).replace(',', '.'));
-    let v = isNaN(raw) ? 1.0 : raw;
+    let v = isNaN(raw) ? (m.margin_top ?? 1.0) : raw;
     if (v > 5) v /= 10;
-    currentTemplate.matriz_a4.margin_top = parseFloat(v.toFixed(1));
+    m.margin_top = parseFloat(v.toFixed(1));
   }
 
   const elMLeft = document.getElementById('tpl-matriz-margin-left');
-  if (elMLeft) {
+  if (elMLeft && elMLeft.value !== '') {
     let raw = parseFloat(String(elMLeft.value).replace(',', '.'));
-    let v = isNaN(raw) ? 1.0 : raw;
+    let v = isNaN(raw) ? (m.margin_left ?? 1.0) : raw;
     if (v > 5) v /= 10;
-    currentTemplate.matriz_a4.margin_left = parseFloat(v.toFixed(1));
+    m.margin_left = parseFloat(v.toFixed(1));
   }
 
   const elGapX = document.getElementById('tpl-matriz-gap-x');
-  if (elGapX) {
+  if (elGapX && elGapX.value !== '') {
     let raw = parseFloat(String(elGapX.value).replace(',', '.'));
-    let v = isNaN(raw) ? 0.0 : raw;
+    let v = isNaN(raw) ? (m.gap_x ?? 0.0) : raw;
     if (v > 3) v /= 10;
-    currentTemplate.matriz_a4.gap_x = parseFloat(v.toFixed(1));
+    m.gap_x = parseFloat(v.toFixed(1));
   }
 
   const elGapY = document.getElementById('tpl-matriz-gap-y');
-  if (elGapY) {
+  if (elGapY && elGapY.value !== '') {
     let raw = parseFloat(String(elGapY.value).replace(',', '.'));
-    let v = isNaN(raw) ? 0.0 : raw;
+    let v = isNaN(raw) ? (m.gap_y ?? 0.0) : raw;
     if (v > 3) v /= 10;
-    currentTemplate.matriz_a4.gap_y = parseFloat(v.toFixed(1));
+    m.gap_y = parseFloat(v.toFixed(1));
   }
 
   const elCorteTipo = document.getElementById('tpl-matriz-corte-tipo');
-  if (elCorteTipo) currentTemplate.matriz_a4.corte_tipo = elCorteTipo.value || 'solid';
+  if (elCorteTipo) m.corte_tipo = elCorteTipo.value || m.corte_tipo || 'solid';
 
   const elCorteGrosor = document.getElementById('tpl-matriz-corte-grosor');
-  if (elCorteGrosor) currentTemplate.matriz_a4.corte_grosor = parseInt(elCorteGrosor.value, 10) || 1;
+  if (elCorteGrosor && elCorteGrosor.value !== '') m.corte_grosor = parseInt(elCorteGrosor.value, 10) || m.corte_grosor || 1;
 
   const elCorteColor = document.getElementById('tpl-matriz-corte-color');
-  if (elCorteColor && elCorteColor.value) currentTemplate.matriz_a4.corte_color = elCorteColor.value;
+  if (elCorteColor && elCorteColor.value) m.corte_color = elCorteColor.value;
 
   const elCorteHActivo = document.getElementById('tpl-matriz-corte-h-activo');
-  if (elCorteHActivo) currentTemplate.matriz_a4.corte_h_activo = elCorteHActivo.checked;
+  if (elCorteHActivo) m.corte_h_activo = elCorteHActivo.checked;
 
   const elCorteHModo = document.getElementById('tpl-matriz-corte-h-modo');
-  if (elCorteHModo) currentTemplate.matriz_a4.corte_h_modo = elCorteHModo.value || 'pegadas';
+  if (elCorteHModo) m.corte_h_modo = elCorteHModo.value || m.corte_h_modo || 'pegadas';
 
   const elCorteVActivo = document.getElementById('tpl-matriz-corte-v-activo');
-  if (elCorteVActivo) currentTemplate.matriz_a4.corte_v_activo = elCorteVActivo.checked;
+  if (elCorteVActivo) m.corte_v_activo = elCorteVActivo.checked;
 
   const elCorteVModo = document.getElementById('tpl-matriz-corte-v-modo');
-  if (elCorteVModo) currentTemplate.matriz_a4.corte_v_modo = elCorteVModo.value || 'pegadas';
+  if (elCorteVModo) m.corte_v_modo = elCorteVModo.value || m.corte_v_modo || 'pegadas';
 }
 
 async function saveTemplate() {
