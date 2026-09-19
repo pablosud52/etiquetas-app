@@ -5,7 +5,23 @@ const fs = require('fs');
 // Determinar el directorio base tanto en entorno de desarrollo como en ejecutable empaquetado con pkg
 const isPkg = typeof process.pkg !== 'undefined';
 const basePath = isPkg ? path.dirname(process.execPath) : process.cwd();
-const dbPath = path.join(basePath, 'etiquetas.db');
+
+// Soporte para ruta persistente (Docker o ruta personalizada):
+// 1. Variable de entorno explícita DB_PATH (ej: /app/data/etiquetas.db)
+// 2. Si se define DATA_DIR (ej: /app/data), se guarda en path.join(DATA_DIR, 'etiquetas.db')
+// 3. Por defecto en local/pkg: basePath/etiquetas.db
+const dataDir = process.env.DATA_DIR || (process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : basePath);
+const dbPath = process.env.DB_PATH || path.join(dataDir, 'etiquetas.db');
+
+// Asegurar que el directorio contenedor exista antes de que SQLite intente crear/abrir el archivo
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  try {
+    fs.mkdirSync(dbDir, { recursive: true });
+  } catch (e) {
+    console.error(`No se pudo crear carpeta para la base de datos (${dbDir}):`, e.message);
+  }
+}
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -14,6 +30,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.log(`Base de datos SQLite conectada en: ${dbPath}`);
   }
 });
+
+db.dbPath = dbPath;
 
 db.serialize(() => {
   // 1. Tabla Usuarios con admin / admin inicial

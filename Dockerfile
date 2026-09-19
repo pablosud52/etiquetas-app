@@ -16,14 +16,16 @@ RUN npm install --production
 # Copiar el resto del código de la aplicación
 COPY . .
 
-# Crear la carpeta uploads por si no existe
-RUN mkdir -p /app/uploads
+# Crear directorios para datos persistentes (base de datos y uploads)
+RUN mkdir -p /app/data /app/uploads
 
 # Exponer el puerto configurado en server.js
 EXPOSE 8080
 
-# Variable de entorno para el puerto
+# Variables de entorno para el contenedor
 ENV PORT=8080
+ENV DB_PATH=/app/data/etiquetas.db
+ENV UPLOADS_DIR=/app/uploads
 
 # Comando para iniciar la aplicación
 CMD ["node", "server.js"]

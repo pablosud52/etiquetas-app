@@ -13,10 +13,10 @@ const PORT = process.env.PORT || 8080;
 // Determinar directorio base tanto en entorno de desarrollo como en pkg
 const isPkg = typeof process.pkg !== 'undefined';
 const basePath = isPkg ? path.dirname(process.execPath) : process.cwd();
-const uploadsDir = path.join(basePath, 'uploads');
-const backgroundsDir = path.join(basePath, 'uploads', 'backgrounds');
-const fontsDir = path.join(basePath, 'uploads', 'fonts');
-const backupsTempDir = path.join(basePath, 'uploads', 'temp_backups');
+const uploadsDir = process.env.UPLOADS_DIR || path.join(basePath, 'uploads');
+const backgroundsDir = path.join(uploadsDir, 'backgrounds');
+const fontsDir = path.join(uploadsDir, 'fonts');
+const backupsTempDir = path.join(uploadsDir, 'temp_backups');
 
 [uploadsDir, backgroundsDir, fontsDir, backupsTempDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
@@ -515,7 +515,7 @@ app.put('/api/config/obsolescencia', async (req, res) => {
 app.get('/api/backup/export', async (req, res) => {
   try {
     const zip = new AdmZip();
-    const dbFilePath = path.join(basePath, 'etiquetas.db');
+    const dbFilePath = db.dbPath || process.env.DB_PATH || path.join(basePath, 'etiquetas.db');
 
     if (fs.existsSync(dbFilePath)) {
       zip.addLocalFile(dbFilePath);
@@ -571,7 +571,8 @@ app.post('/api/backup/import', uploadZip.single('backupZip'), async (req, res) =
       throw new Error('El archivo ZIP no contiene una base de datos válida (etiquetas.db).');
     }
 
-    zip.extractEntryTo('etiquetas.db', basePath, false, true);
+    const targetDbDir = path.dirname(db.dbPath || process.env.DB_PATH || path.join(basePath, 'etiquetas.db'));
+    zip.extractEntryTo('etiquetas.db', targetDbDir, false, true);
 
     zipEntries.forEach(entry => {
       if (entry.entryName.startsWith('uploads/') && !entry.isDirectory) {
@@ -625,7 +626,8 @@ app.delete('/api/fonts/:id', (req, res) => {
     if (err || !font) return res.status(404).json({ success: false, message: 'Fuente no encontrada' });
 
     db.run("DELETE FROM fuentes WHERE id = ?", [req.params.id], () => {
-      const fullPath = path.join(basePath, font.ruta.replace(/^\//, ''));
+      const fontFilename = path.basename(font.ruta);
+      const fullPath = path.join(fontsDir, fontFilename);
       try { if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath); } catch (e) {}
       res.json({ success: true, message: 'Fuente eliminada' });
     });
