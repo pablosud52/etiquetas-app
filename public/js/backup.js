@@ -21,9 +21,14 @@ async function importBackupZip() {
     return;
   }
 
-  if (!confirm('⚠️ ATENCIÓN: Al restaurar esta copia de seguridad se sobrescribirá la base de datos actual y todas las configuraciones con los datos del respaldo. ¿Deseas continuar?')) {
-    return;
-  }
+  const confirmed = await showConfirm({
+    title: 'Restaurar Copia de Seguridad',
+    message: 'Al restaurar esta copia de seguridad se sobrescribirá la base de datos actual y todas las configuraciones con los datos del respaldo.\n\n¿Deseas continuar?',
+    confirmText: 'Sobrescribir y Restaurar',
+    cancelText: 'Cancelar',
+    type: 'warning'
+  });
+  if (!confirmed) return;
 
   const file = fileInput.files[0];
   const formData = new FormData();

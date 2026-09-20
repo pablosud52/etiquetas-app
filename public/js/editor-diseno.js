@@ -789,7 +789,14 @@ async function handleFontUploadSubmit(e) {
 }
 
 async function deleteCustomFont(id) {
-  if (!confirm('¿Eliminar esta fuente personalizada?')) return;
+  const confirmed = await showConfirm({
+    title: 'Eliminar Fuente',
+    message: '¿Estás seguro de que deseas eliminar esta fuente personalizada del sistema?',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
   try {
     await fetch(`/api/fonts/${id}`, { method: 'DELETE' });
     await loadInstalledFonts();

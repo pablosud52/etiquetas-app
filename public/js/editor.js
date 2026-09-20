@@ -547,7 +547,14 @@ async function deleteCurrentTemplate() {
     return;
   }
 
-  if (!confirm(`¿Estás seguro de eliminar la plantilla "${currentTemplate.nombre}"?`)) return;
+  const confirmed = await showConfirm({
+    title: 'Eliminar Plantilla',
+    message: `¿Estás seguro de eliminar la plantilla "${currentTemplate.nombre}"?\nEsta acción no se puede deshacer.`,
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
 
   try {
     const res = await fetch(`/api/templates/${currentTemplate.id}`, { method: 'DELETE' });

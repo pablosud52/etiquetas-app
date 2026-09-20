@@ -373,9 +373,14 @@ function downloadCurrentExcel() {
  * Accesible desde el botón "Eliminar archivo" en la tarjeta de importación.
  */
 async function deleteExcelFile() {
-  if (!confirm('¿Estás seguro de que deseas eliminar el archivo Excel almacenado?\n\nEsta acción borra el molde del servidor, pero NO afecta al listado de productos en la base de datos.')) {
-    return;
-  }
+  const confirmed = await showConfirm({
+    title: 'Eliminar Archivo Excel',
+    message: '¿Estás seguro de que deseas eliminar el archivo Excel almacenado?\n\nEsta acción borra el archivo del servidor, pero NO afecta al listado de productos en la base de datos.',
+    confirmText: 'Eliminar Archivo',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
 
   const btn = document.getElementById('btn-delete-excel');
   if (btn) btn.disabled = true;
@@ -417,9 +422,14 @@ async function deleteExcelFile() {
  */
 async function clearProducts() {
   // 1. Confirmación explícita
-  if (!confirm('¿Estás seguro de que deseas vaciar completamente la lista de productos?\nEsta acción eliminará todos los registros en SQLite y no se puede deshacer.')) {
-    return;
-  }
+  const confirmed = await showConfirm({
+    title: 'Vaciar Listado de Productos',
+    message: '¿Estás seguro de que deseas vaciar completamente la lista de productos?\n\nEsta acción eliminará todos los registros en la base de datos y no se puede deshacer.',
+    confirmText: 'Vaciar Todo',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
 
   const modal          = document.getElementById('datos-progress-modal');
   const progressBar    = document.getElementById('progress-modal-bar');
@@ -586,7 +596,14 @@ async function handleProductSubmit(e) {
 }
 
 async function deleteProduct(id) {
-  if (!confirm('¿Estás seguro de eliminar este producto del listado?')) return;
+  const confirmed = await showConfirm({
+    title: 'Eliminar Producto',
+    message: '¿Estás seguro de eliminar este producto del listado?',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
 
   try {
     const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });

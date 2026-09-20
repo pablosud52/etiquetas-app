@@ -429,7 +429,14 @@ async function toggleUserActive(id, username, actualmenteActivo) {
   const nuevoEstado = actualmenteActivo ? 0 : 1;
   const accionStr = actualmenteActivo ? 'deshabilitar' : 'habilitar';
 
-  if (!confirm(`¿Estás seguro de ${accionStr} el acceso al usuario "${username}"?`)) return;
+  const confirmed = await showConfirm({
+    title: actualmenteActivo ? 'Deshabilitar Usuario' : 'Habilitar Usuario',
+    message: `¿Estás seguro de ${accionStr} el acceso al usuario "${username}"?`,
+    confirmText: actualmenteActivo ? 'Deshabilitar' : 'Habilitar',
+    cancelText: 'Cancelar',
+    type: actualmenteActivo ? 'warning' : 'primary'
+  });
+  if (!confirmed) return;
 
   try {
     let res = await fetch(`/api/users/${id}`, {
@@ -462,7 +469,14 @@ async function deleteUser(id, username) {
     return;
   }
 
-  if (!confirm(`¿Estás seguro de eliminar el usuario "${username}"?`)) return;
+  const confirmed = await showConfirm({
+    title: 'Eliminar Usuario',
+    message: `¿Estás seguro de eliminar permanentemente al usuario "${username}"?`,
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    type: 'danger'
+  });
+  if (!confirmed) return;
 
   try {
     let res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
