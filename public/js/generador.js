@@ -93,13 +93,16 @@ async function checkObsolescenciaInGenerador() {
     if (!data.success) return;
 
     if (data.esta_obsoleto) {
-      alertContainer.className = 'w-auto max-w-2xl mx-auto rounded-2xl px-5 py-2 bg-amber-950/40 border border-amber-500/50 text-amber-200 shadow-md flex flex-col items-center justify-center text-center animate-pulse';
+      alertContainer.className = 'w-full max-w-xl mx-2 rounded-xl px-4 py-1.5 bg-amber-950/40 border border-amber-500/50 text-amber-200 shadow-md flex flex-col items-center justify-center text-center animate-pulse self-stretch -my-1';
       alertContainer.innerHTML = `
-        <div class="flex items-center justify-center gap-2 text-xs font-medium whitespace-nowrap">
-          <span class="text-amber-400 font-bold">⚠️</span>
-          <span><strong class="text-amber-300">ALERTA DE OBSOLESCENCIA DE PRECIOS:</strong> <span class="text-white">${data.mensaje}</span></span>
+        <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300 tracking-wide">
+          <span class="text-amber-400">⚠️</span>
+          <span>ALERTA DE OBSOLESCENCIA DE PRECIOS</span>
         </div>
-        <div class="flex items-center justify-center gap-3 mt-1 text-xs">
+        <p class="text-[11px] text-white/95 leading-tight mt-0.5 text-center px-2">
+          ${data.mensaje}
+        </p>
+        <div class="flex items-center justify-center gap-3 mt-1 text-[11px]">
           <span class="text-amber-300/90 font-mono font-medium">${data.total_productos || 0} productos</span>
           <button onclick="loadComponent('datos')" class="px-2.5 py-0.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold text-[10px] rounded transition-colors shadow cursor-pointer">
             Actualizar Lista
@@ -108,14 +111,16 @@ async function checkObsolescenciaInGenerador() {
       `;
       alertContainer.classList.remove('hidden');
     } else {
-      alertContainer.className = 'w-auto max-w-2xl mx-auto rounded-2xl px-6 py-2.5 bg-slate-900/85 border border-emerald-500/40 shadow-inner flex flex-col items-center justify-center text-center';
+      alertContainer.className = 'w-full max-w-xl mx-2 rounded-xl px-4 py-1.5 bg-slate-900/85 border border-emerald-500/40 shadow-inner flex flex-col items-center justify-center text-center self-stretch -my-1';
       alertContainer.innerHTML = `
-        <div class="flex items-center justify-center gap-2 text-xs whitespace-nowrap">
+        <div class="flex items-center justify-center gap-2 text-xs">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-          <span class="font-bold text-emerald-400">Lista de Precios al Día:</span>
-          <span class="text-white font-normal">${data.mensaje}</span>
+          <span class="font-bold text-emerald-400">Lista de Precios al Día</span>
         </div>
-        <div class="text-xs text-emerald-400 font-mono mt-1 font-medium">
+        <p class="text-[11px] text-white/90 leading-tight mt-0.5 text-center px-2">
+          ${data.mensaje}
+        </p>
+        <div class="text-[11px] text-emerald-400 font-mono mt-1 font-medium">
           ${data.total_productos} productos listos
         </div>
       `;
