@@ -26,6 +26,29 @@ function showLoginScreen() {
   if (dashboardWrapper) dashboardWrapper.classList.add('hidden');
 }
 
+// Comprobar si el usuario actual tiene acceso a un módulo específico
+function hasPermission(moduleName) {
+  if (!currentUser) return false;
+  const role = (currentUser.rol || currentUser.role || '').toLowerCase();
+  if (role.includes('admin')) return true;
+
+  const target = (moduleName === 'editor') ? 'plantillas' : moduleName;
+  const permisos = currentUser.permisos;
+  if (Array.isArray(permisos)) {
+    return permisos.includes(target);
+  }
+
+  // Fallback por rol histórico
+  if (role.includes('gestor')) {
+    return ['generador', 'plantillas', 'datos'].includes(target);
+  }
+  if (role.includes('editor')) {
+    return ['generador', 'plantillas'].includes(target);
+  }
+  return target === 'generador';
+}
+window.hasPermission = hasPermission;
+
 // Muestra la pantalla principal y aplica permisos por rol
 function showAppScreen() {
   const loginWrapper = document.getElementById('login-wrapper');
@@ -43,17 +66,37 @@ function showAppScreen() {
     userDisplay.textContent = cleanName;
   }
 
-  // Comprobar rol del usuario
-  const roleRaw = (currentUser.rol || currentUser.role || '').toLowerCase();
-  const isAdmin = roleRaw.includes('admin');
-
+  // Control dinámico de pestañas según los permisos asignados
   const tabsContainer = document.getElementById('tabs-container');
+  let visibleTabsCount = 0;
+  let firstPermittedModule = null;
+
+  const tabModules = [
+    { id: 'tab-generador', mod: 'generador' },
+    { id: 'tab-plantillas', mod: 'plantillas' },
+    { id: 'tab-datos', mod: 'datos' },
+    { id: 'tab-usuarios', mod: 'usuarios' }
+  ];
+
+  tabModules.forEach(({ id, mod }) => {
+    const tabEl = document.getElementById(id);
+    if (tabEl) {
+      if (hasPermission(mod)) {
+        tabEl.classList.remove('hidden');
+        visibleTabsCount++;
+        if (!firstPermittedModule) firstPermittedModule = mod;
+      } else {
+        tabEl.classList.add('hidden');
+      }
+    }
+  });
+
   if (tabsContainer) {
-    if (isAdmin) {
-      // Administrador: ver todas las pestañas
+    // Si tiene acceso a más de 1 módulo, se muestra la barra para alternar entre ellos
+    // Si solo tiene acceso a 1 módulo (ej: Operador solo a Generador), se oculta para vista limpia
+    if (visibleTabsCount > 1) {
       tabsContainer.classList.remove('hidden');
     } else {
-      // Operador: la barra de navegación superior (pestañas) se oculta por completo
       tabsContainer.classList.add('hidden');
     }
   }
@@ -63,8 +106,9 @@ function showAppScreen() {
     loadInstalledFonts();
   }
 
-  // Cargar componente inicial (por defecto generador)
-  loadComponent('generador');
+  // Cargar componente inicial (prioriza generador si está disponible, o el primer módulo permitido)
+  const initialModule = hasPermission('generador') ? 'generador' : (firstPermittedModule || 'generador');
+  loadComponent(initialModule);
 }
 
 // Cerrar sesión
@@ -86,11 +130,10 @@ async function logout() {
 
 // Carga modular dinámica de componentes en #main-content
 async function loadComponent(name) {
-  // Restricción de Seguridad: Operadores solo pueden acceder al Módulo 1 (generador)
-  const roleRaw = (currentUser?.rol || currentUser?.role || '').toLowerCase();
-  const isAdmin = roleRaw.includes('admin');
-  if (!isAdmin && name !== 'generador') {
-    name = 'generador';
+  // Restricción de Seguridad: Validar que el usuario tenga permiso para el módulo solicitado
+  if (!hasPermission(name)) {
+    console.warn(`Acceso denegado a módulo '${name}'. Redirigiendo a módulo permitido.`);
+    name = hasPermission('generador') ? 'generador' : 'generador';
   }
 
   // Mapear alias si es necesario (ej: 'plantillas' -> 'editor')

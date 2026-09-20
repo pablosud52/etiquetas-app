@@ -36,16 +36,20 @@ function initSchema(databaseInstance) {
       password TEXT,
       rol TEXT,
       activo INTEGER DEFAULT 1,
+      permisos TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`, (err) => {
       if (!err) {
-        databaseInstance.run(`INSERT OR IGNORE INTO usuarios (id, usuario, password, rol, activo) VALUES (1, 'admin', 'admin', 'Administrador', 1)`);
+        databaseInstance.run(`INSERT OR IGNORE INTO usuarios (id, usuario, password, rol, activo, permisos) VALUES (1, 'admin', 'admin', 'Administrador', 1, '["generador","plantillas","datos","usuarios"]')`);
       }
     });
 
     // Migración segura para tablas preexistentes
     databaseInstance.run(`ALTER TABLE usuarios ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP`, () => {});
     databaseInstance.run(`ALTER TABLE usuarios ADD COLUMN activo INTEGER DEFAULT 1`, () => {});
+    databaseInstance.run(`ALTER TABLE usuarios ADD COLUMN permisos TEXT`, () => {});
+    // Asegurar que el admin principal siempre tenga rol Administrador y todos los módulos
+    databaseInstance.run(`UPDATE usuarios SET permisos = '["generador","plantillas","datos","usuarios"]', rol = 'Administrador' WHERE id = 1 OR LOWER(usuario) = 'admin'`, () => {});
 
     // 2. Tabla Configuraciones del Sistema (clave-valor)
     databaseInstance.run(`CREATE TABLE IF NOT EXISTS configuraciones (

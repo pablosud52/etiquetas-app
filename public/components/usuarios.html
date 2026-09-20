@@ -59,14 +59,16 @@
           <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-700/60">
             <th class="py-3.5 px-4">ID</th>
             <th class="py-3.5 px-4">Usuario</th>
-            <th class="py-3.5 px-4">Rol / Estado</th>
+            <th class="py-3.5 px-4">Rol / Nivel</th>
+            <th class="py-3.5 px-4">Módulos Autorizados</th>
+            <th class="py-3.5 px-4">Estado</th>
             <th class="py-3.5 px-4">Fecha de Creación</th>
             <th class="py-3.5 px-4 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody id="users-tbody" class="divide-y divide-slate-700/40 text-xs text-slate-300">
           <tr>
-            <td colspan="5" class="text-center py-8 text-slate-500">Cargando usuarios...</td>
+            <td colspan="7" class="text-center py-8 text-slate-500">Cargando usuarios...</td>
           </tr>
         </tbody>
       </table>
@@ -76,8 +78,8 @@
 
 <!-- MODAL CREAR / EDITAR USUARIO -->
 <div id="user-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-  <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6 relative">
-    <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 relative max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
       <h3 id="modal-user-title" class="text-lg font-bold text-white">Nuevo Usuario</h3>
       <button onclick="closeUserModal()" class="text-slate-400 hover:text-white transition-colors cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -122,15 +124,73 @@
         </div>
       </div>
 
-      <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Rol</label>
-        <select id="modal-role" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2 text-white text-xs focus:outline-none focus:border-blue-500">
-          <option value="operador">Operador</option>
-          <option value="admin">Administrador</option>
-        </select>
+      <!-- SECCIÓN DE PERMISOS POR MÓDULO CON PREAJUSTES RÁPIDOS -->
+      <div class="space-y-3 p-3.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Permisos de Acceso por Módulo</label>
+          <div id="modal-role-badge-preview"></div>
+        </div>
+
+        <!-- Botones de Preajustes Rápidos -->
+        <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+          <span class="text-[10px] uppercase font-bold text-slate-500 mr-0.5">Preajustes:</span>
+          <button type="button" onclick="applyRolePreset('operador')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition cursor-pointer">Operador</button>
+          <button type="button" onclick="applyRolePreset('editor')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition cursor-pointer">Operador Editor</button>
+          <button type="button" onclick="applyRolePreset('gestor')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition cursor-pointer">Operador Gestor</button>
+          <button type="button" onclick="applyRolePreset('admin')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition cursor-pointer">Administrador</button>
+        </div>
+
+        <!-- Lista de Checkboxes de Módulos -->
+        <div class="space-y-2 pt-1">
+          <!-- Módulo 1: Generador -->
+          <label class="flex items-start gap-3 p-2.5 rounded-lg border border-slate-700/60 bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer select-none">
+            <input type="checkbox" id="perm-generador" value="generador" checked onchange="onModulePermissionChange()" class="mt-0.5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0 cursor-pointer">
+            <div class="text-xs">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <span>🖨️ Generador de Etiquetas</span>
+                <span class="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">Base</span>
+              </span>
+              <p class="text-[11px] text-slate-400">Búsqueda de productos, selección de copias e impresión en pliegos A4.</p>
+            </div>
+          </label>
+
+          <!-- Módulo 2: Plantillas -->
+          <label class="flex items-start gap-3 p-2.5 rounded-lg border border-slate-700/60 bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer select-none">
+            <input type="checkbox" id="perm-plantillas" value="plantillas" onchange="onModulePermissionChange()" class="mt-0.5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0 cursor-pointer">
+            <div class="text-xs">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <span>📐 Plantillas y Diseño</span>
+              </span>
+              <p class="text-[11px] text-slate-400">Editor visual de diseño, tipografías, fondos y grilla de pliegos.</p>
+            </div>
+          </label>
+
+          <!-- Módulo 3: Datos -->
+          <label class="flex items-start gap-3 p-2.5 rounded-lg border border-slate-700/60 bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer select-none">
+            <input type="checkbox" id="perm-datos" value="datos" onchange="onModulePermissionChange()" class="mt-0.5 rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0 cursor-pointer">
+            <div class="text-xs">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <span>📊 Datos y Catálogo</span>
+              </span>
+              <p class="text-[11px] text-slate-400">Importación de archivos Excel, actualización de productos y precios.</p>
+            </div>
+          </label>
+
+          <!-- Módulo 4: Usuarios y Backup -->
+          <label class="flex items-start gap-3 p-2.5 rounded-lg border border-slate-700/60 bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer select-none">
+            <input type="checkbox" id="perm-usuarios" value="usuarios" onchange="onModulePermissionChange()" class="mt-0.5 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
+            <div class="text-xs">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <span>⚙️ Usuarios y Backup</span>
+                <span class="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Total</span>
+              </span>
+              <p class="text-[11px] text-slate-400">Gestión de cuentas de usuarios y copias de seguridad del sistema.</p>
+            </div>
+          </label>
+        </div>
       </div>
 
-      <div class="flex justify-end gap-3 pt-4 border-t border-slate-700/60">
+      <div class="flex justify-end gap-3 pt-3 border-t border-slate-700/60">
         <button type="button" onclick="closeUserModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
           Cancelar
         </button>

@@ -118,6 +118,60 @@ const setConfigValue = (clave, valor) => {
 
 // --- RUTAS DE AUTENTICACIÓN ---
 
+function parseUserPermisos(permisosRaw, rolRaw) {
+  let list = [];
+  if (typeof permisosRaw === 'string') {
+    try {
+      list = JSON.parse(permisosRaw);
+    } catch(e) {
+      list = permisosRaw.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  } else if (Array.isArray(permisosRaw)) {
+    list = permisosRaw;
+  }
+
+  if (!Array.isArray(list) || list.length === 0) {
+    const r = (rolRaw || '').toLowerCase();
+    if (r.includes('admin')) {
+      list = ['generador', 'plantillas', 'datos', 'usuarios'];
+    } else if (r.includes('gestor')) {
+      list = ['generador', 'plantillas', 'datos'];
+    } else if (r.includes('editor')) {
+      list = ['generador', 'plantillas'];
+    } else {
+      list = ['generador'];
+    }
+  }
+
+  // Asegurar que 'generador' siempre esté habilitado como base
+  if (!list.includes('generador')) {
+    list.unshift('generador');
+  }
+
+  return list;
+}
+
+function calculateRoleName(permisosList) {
+  const hasGen = permisosList.includes('generador');
+  const hasPlan = permisosList.includes('plantillas');
+  const hasDatos = permisosList.includes('datos');
+  const hasUsers = permisosList.includes('usuarios');
+
+  if (hasGen && hasPlan && hasDatos && hasUsers) {
+    return 'Administrador';
+  }
+  if (hasGen && hasPlan && hasDatos && !hasUsers) {
+    return 'Operador Gestor';
+  }
+  if (hasGen && hasPlan && !hasDatos && !hasUsers) {
+    return 'Operador Editor';
+  }
+  if (hasGen && !hasPlan && !hasDatos && !hasUsers) {
+    return 'Operador';
+  }
+  return 'Personalizado';
+}
+
 const handleLogin = (req, res) => {
   const username = req.body.usuario || req.body.username || '';
   const password = req.body.password || req.body.contrasena || '';
@@ -132,12 +186,20 @@ const handleLogin = (req, res) => {
       if (row.activo === 0) {
         return res.status(403).json({ success: false, message: 'Usuario inhabilitado. Contacte al Administrador', error: 'Usuario inhabilitado. Contacte al Administrador' });
       }
+
+      const isMain = row.usuario.toLowerCase() === 'admin' || Number(row.id) === 1;
+      const parsedPermisos = isMain
+        ? ['generador', 'plantillas', 'datos', 'usuarios']
+        : parseUserPermisos(row.permisos, row.rol);
+      const rol = isMain ? 'Administrador' : (row.rol || calculateRoleName(parsedPermisos));
+
       const userPayload = {
         id: row.id,
         usuario: row.usuario,
         username: row.usuario,
-        rol: row.rol,
-        role: row.rol,
+        rol: rol,
+        role: rol,
+        permisos: parsedPermisos,
         activo: row.activo ?? 1
       };
       res.json({ success: true, user: userPayload });
@@ -163,15 +225,23 @@ app.post('/api/logout', (req, res) => {
 const getUsersHandler = (req, res) => {
   db.all("SELECT * FROM usuarios ORDER BY id ASC", [], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: err.message, error: err.message });
-    const formatted = (rows || []).map(r => ({
-      id: r.id,
-      usuario: r.usuario,
-      username: r.usuario,
-      rol: r.rol,
-      role: r.rol,
-      activo: r.activo ?? 1,
-      createdAt: r.created_at || r.fecha_creacion || null
-    }));
+    const formatted = (rows || []).map(r => {
+      const isMain = r.usuario.toLowerCase() === 'admin' || Number(r.id) === 1;
+      const parsedPermisos = isMain
+        ? ['generador', 'plantillas', 'datos', 'usuarios']
+        : parseUserPermisos(r.permisos, r.rol);
+      const rol = isMain ? 'Administrador' : (r.rol || calculateRoleName(parsedPermisos));
+      return {
+        id: r.id,
+        usuario: r.usuario,
+        username: r.usuario,
+        rol: rol,
+        role: rol,
+        permisos: parsedPermisos,
+        activo: r.activo ?? 1,
+        createdAt: r.created_at || r.fecha_creacion || null
+      };
+    });
     res.json(formatted);
   });
 };
@@ -182,18 +252,22 @@ app.get('/api/usuarios', getUsersHandler);
 const createUserHandler = (req, res) => {
   const username = (req.body.usuario || req.body.username || '').trim();
   const password = req.body.password || '';
-  let role = req.body.rol || req.body.role || 'Operador';
   const activo = req.body.activo !== undefined ? (req.body.activo ? 1 : 0) : 1;
 
   if (!username || !password) {
     return res.status(400).json({ success: false, message: 'Usuario y contraseña obligatorios', error: 'Usuario y contraseña obligatorios' });
   }
 
-  const rolNormalizado = role.toLowerCase().includes('admin') ? 'Administrador' : 'Operador';
+  const isMainAdmin = username.toLowerCase() === 'admin';
+  let parsedPermisos = parseUserPermisos(req.body.permisos, req.body.rol || req.body.role);
+  if (isMainAdmin) {
+    parsedPermisos = ['generador', 'plantillas', 'datos', 'usuarios'];
+  }
+  const rolCalculado = isMainAdmin ? 'Administrador' : calculateRoleName(parsedPermisos);
 
-  db.run("INSERT INTO usuarios (usuario, password, rol, activo) VALUES (?, ?, ?, ?)", [username, password, rolNormalizado, activo], function(err) {
+  db.run("INSERT INTO usuarios (usuario, password, rol, activo, permisos) VALUES (?, ?, ?, ?, ?)", [username, password, rolCalculado, activo, JSON.stringify(parsedPermisos)], function(err) {
     if (err) return res.status(400).json({ success: false, message: 'El usuario ya existe', error: 'El usuario ya existe' });
-    res.json({ success: true, id: this.lastID, user: { id: this.lastID, usuario: username, rol: rolNormalizado, activo } });
+    res.json({ success: true, id: this.lastID, user: { id: this.lastID, usuario: username, rol: rolCalculado, activo, permisos: parsedPermisos } });
   });
 };
 
@@ -202,8 +276,7 @@ app.post('/api/usuarios', createUserHandler);
 
 const updateUserHandler = (req, res) => {
   const { id } = req.params;
-  let { rol, role, password, activo } = req.body;
-  const targetRole = rol || role;
+  let { rol, role, password, activo, permisos } = req.body;
 
   db.get("SELECT * FROM usuarios WHERE id = ?", [id], (err, user) => {
     if (err) return res.status(500).json({ success: false, message: err.message, error: err.message });
@@ -211,15 +284,22 @@ const updateUserHandler = (req, res) => {
 
     let finalRole = user.rol;
     let finalActivo = user.activo ?? 1;
+    let finalPermisos = user.permisos || '["generador"]';
 
     const isMainAdmin = user.usuario.toLowerCase() === 'admin' || Number(id) === 1;
 
     if (isMainAdmin) {
       finalRole = 'Administrador';
       finalActivo = 1; // Admin principal siempre activo
+      finalPermisos = JSON.stringify(['generador', 'plantillas', 'datos', 'usuarios']);
     } else {
-      if (targetRole) {
-        finalRole = targetRole.toLowerCase().includes('admin') ? 'Administrador' : 'Operador';
+      if (permisos !== undefined) {
+        const parsed = parseUserPermisos(permisos, rol || role);
+        finalPermisos = JSON.stringify(parsed);
+        finalRole = calculateRoleName(parsed);
+      } else if (rol || role) {
+        const targetRole = rol || role;
+        finalRole = targetRole;
       }
       if (activo !== undefined) {
         finalActivo = activo ? 1 : 0;
@@ -227,14 +307,14 @@ const updateUserHandler = (req, res) => {
     }
 
     if (password && password.trim() !== '') {
-      db.run("UPDATE usuarios SET rol = ?, password = ?, activo = ? WHERE id = ?", [finalRole, password, finalActivo, id], function(updateErr) {
+      db.run("UPDATE usuarios SET rol = ?, password = ?, activo = ?, permisos = ? WHERE id = ?", [finalRole, password, finalActivo, finalPermisos, id], function(updateErr) {
         if (updateErr) return res.status(500).json({ success: false, message: updateErr.message, error: updateErr.message });
-        res.json({ success: true, message: 'Usuario actualizado con éxito' });
+        res.json({ success: true, message: 'Usuario actualizado con éxito', rol: finalRole });
       });
     } else {
-      db.run("UPDATE usuarios SET rol = ?, activo = ? WHERE id = ?", [finalRole, finalActivo, id], function(updateErr) {
+      db.run("UPDATE usuarios SET rol = ?, activo = ?, permisos = ? WHERE id = ?", [finalRole, finalActivo, finalPermisos, id], function(updateErr) {
         if (updateErr) return res.status(500).json({ success: false, message: updateErr.message, error: updateErr.message });
-        res.json({ success: true, message: 'Usuario actualizado con éxito' });
+        res.json({ success: true, message: 'Usuario actualizado con éxito', rol: finalRole });
       });
     }
   });

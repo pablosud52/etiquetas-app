@@ -60,14 +60,16 @@ async function initGeneradorModule() {
   fitGenSheetToViewport();
 }
 
-// Aplicar visibilidad de controles exclusivos para Administrador
+// Aplicar visibilidad de controles de edición de plantilla (Admin, Operador Gestor, Operador Editor)
 function applyAdminControlsInGenerador() {
-  const isAdmin = currentUser && (currentUser.rol || currentUser.role || '').toLowerCase().includes('admin');
+  const canEditTemplate = typeof hasPermission === 'function'
+    ? hasPermission('plantillas')
+    : (currentUser && (currentUser.rol || currentUser.role || '').toLowerCase().includes('admin'));
   
   const btnEditTpl = document.getElementById('btn-admin-edit-template');
 
   if (btnEditTpl) {
-    if (isAdmin) btnEditTpl.classList.remove('hidden');
+    if (canEditTemplate) btnEditTpl.classList.remove('hidden');
     else btnEditTpl.classList.add('hidden');
   }
 }
