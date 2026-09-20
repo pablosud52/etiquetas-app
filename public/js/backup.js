@@ -40,6 +40,7 @@ async function importBackupZip() {
 
     alert('✅ ' + (data.message || 'Copia de seguridad restaurada con éxito.'));
     fileInput.value = '';
+    window.location.reload();
   } catch (err) {
     alert('Error al restaurar respaldo: ' + err.message);
   }

@@ -848,6 +848,22 @@ function onEditorTamanoSelectChange(val) {
   filterEditorProductsTable();
 }
 
+let editorSort = null;
+
+function getEditorSort() {
+  if (!editorSort) {
+    editorSort = new TableSortManager({
+      containerSelector: '#editor-thead',
+      onSortChange: () => filterEditorProductsTable()
+    });
+  }
+  return editorSort;
+}
+
+function toggleEditorSort(colKey, type = 'string') {
+  getEditorSort().toggleSort(colKey, type);
+}
+
 async function loadEditorProductsTable() {
   const tbody = document.getElementById('editor-prod-tbody');
   if (!tbody) return;
@@ -856,15 +872,18 @@ async function loadEditorProductsTable() {
     const res = await fetch('/api/products');
     if (!res.ok) throw new Error('Error al cargar catálogo');
 
-    allEditorProducts = await res.json();
-    allEditorProducts.forEach(p => {
+    const productsData = await res.json();
+    allEditorProducts = (Array.isArray(productsData) ? productsData : []).map((p, idx) => {
+      p._origIndex = idx;
       p._searchIndex = normalizeSearchText([
         p.cod_1, p.cod_2, p.producto, p.title,
         p.spec_1, p.spec_2, p.spec_3, p.spec_4, p.spec_5,
         p.etiqueta_tamano
       ].filter(Boolean).join(' '));
+      return p;
     });
 
+    getEditorSort().updateHeadersUI();
     populateEditorTamanoSelect();
     filterEditorProductsTable();
   } catch (err) {
@@ -946,14 +965,22 @@ function filterEditorProductsTable() {
     return true;
   });
 
+  // Aplicar ordenamiento de 3 estados
+  const sorted = getEditorSort().sort(filtered, (p, col) => {
+    if (col === 'specs') {
+      return [p.spec_1, p.spec_2, p.spec_3].filter(Boolean).join(', ');
+    }
+    return p[col];
+  });
+
   tbody.innerHTML = '';
 
-  if (filtered.length === 0) {
+  if (sorted.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-slate-500">No se encontraron productos coincidentes</td></tr>';
     return;
   }
 
-  filtered.forEach(p => {
+  sorted.forEach(p => {
     const tr = document.createElement('tr');
     const isSelected = selectedTestProduct && selectedTestProduct.id === p.id;
     tr.className = `hover:bg-slate-700/40 cursor-pointer transition-colors ${isSelected ? 'bg-blue-600/20 text-white font-semibold' : ''}`;
@@ -1100,3 +1127,5 @@ function toggleSnap() {
 
 window.toggleGrid = toggleGrid;
 window.toggleSnap = toggleSnap;
+window.toggleEditorSort = toggleEditorSort;
+window.getEditorSort = getEditorSort;

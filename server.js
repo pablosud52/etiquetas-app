@@ -522,7 +522,18 @@ app.get('/api/backup/export', async (req, res) => {
     }
 
     if (fs.existsSync(uploadsDir)) {
-      zip.addLocalFolder(uploadsDir, 'uploads');
+      // Agregar archivos y subcarpetas de uploads excluyendo la carpeta de temporales
+      const entries = fs.readdirSync(uploadsDir);
+      entries.forEach(entry => {
+        if (entry === 'temp_backups') return; // Excluir zips temporales del respaldo
+        const entryPath = path.join(uploadsDir, entry);
+        const stat = fs.statSync(entryPath);
+        if (stat.isDirectory()) {
+          zip.addLocalFolder(entryPath, `uploads/${entry}`);
+        } else if (stat.isFile()) {
+          zip.addLocalFile(entryPath, 'uploads');
+        }
+      });
     }
 
     const fechaCarga = await getConfigValue('fecha_ultima_carga');
@@ -566,17 +577,41 @@ app.post('/api/backup/import', uploadZip.single('backupZip'), async (req, res) =
     const zip = new AdmZip(zipPath);
     const zipEntries = zip.getEntries();
 
-    const hasDb = zipEntries.some(e => e.entryName === 'etiquetas.db' || e.entryName.endsWith('/etiquetas.db'));
-    if (!hasDb) {
+    const dbEntry = zipEntries.find(e => e.entryName === 'etiquetas.db' || e.entryName.endsWith('/etiquetas.db'));
+    if (!dbEntry) {
       throw new Error('El archivo ZIP no contiene una base de datos válida (etiquetas.db).');
     }
 
-    const targetDbDir = path.dirname(db.dbPath || process.env.DB_PATH || path.join(basePath, 'etiquetas.db'));
-    zip.extractEntryTo('etiquetas.db', targetDbDir, false, true);
+    // 1. Cerrar conexión SQLite previa para liberar bloqueos y evitar páginas corruptas en caché
+    if (typeof db.closeConnection === 'function') {
+      await db.closeConnection();
+    }
 
+    // 2. Extraer etiquetas.db en la ruta configurada (persistente)
+    const activeDbPath = db.dbPath || process.env.DB_PATH || path.join(basePath, 'etiquetas.db');
+    const targetDbDir = path.dirname(activeDbPath);
+    if (!fs.existsSync(targetDbDir)) {
+      fs.mkdirSync(targetDbDir, { recursive: true });
+    }
+    fs.writeFileSync(activeDbPath, dbEntry.getData());
+
+    // 3. Reabrir conexión SQLite con la nueva base de datos restaurada
+    if (typeof db.reopen === 'function') {
+      await db.reopen();
+    }
+
+    // 4. Restaurar archivos de uploads preservando la estructura exacta de subcarpetas (backgrounds, fonts, etc.)
     zipEntries.forEach(entry => {
       if (entry.entryName.startsWith('uploads/') && !entry.isDirectory) {
-        zip.extractEntryTo(entry, uploadsDir, false, true);
+        const relPath = entry.entryName.replace(/^uploads\//, '');
+        if (relPath && !relPath.startsWith('temp_backups/')) {
+          const destFilePath = path.join(uploadsDir, relPath);
+          const destDir = path.dirname(destFilePath);
+          if (!fs.existsSync(destDir)) {
+            fs.mkdirSync(destDir, { recursive: true });
+          }
+          fs.writeFileSync(destFilePath, entry.getData());
+        }
       }
     });
 
@@ -584,11 +619,15 @@ app.post('/api/backup/import', uploadZip.single('backupZip'), async (req, res) =
 
     res.json({
       success: true,
-      message: 'Copia de seguridad restaurada con éxito. Todos los datos, plantillas y configuraciones han sido recuperados.'
+      message: 'Copia de seguridad restaurada con éxito. Todos los datos, plantillas, imágenes y configuraciones han sido recuperados.'
     });
 
   } catch (err) {
     console.error('Error al restaurar backup:', err);
+    // Si hubo error, asegurar que la DB vuelva a abrirse si quedó cerrada
+    if (typeof db.reopen === 'function') {
+      try { await db.reopen(); } catch (reopenErr) {}
+    }
     try { fs.unlinkSync(zipPath); } catch (e) {}
     res.status(400).json({ success: false, message: 'Error al restaurar copia de seguridad: ' + err.message });
   }

@@ -6,6 +6,24 @@ let allGenProducts = [];
 let filteredGenProducts = [];
 let allGenTemplates = [];
 let activeGenTemplate = null;
+let currentGenPage = 1;
+
+/** Gestor de ordenamiento de 3 estados para la tabla del Generador */
+let generadorSort = null;
+
+function getGeneradorSort() {
+  if (!generadorSort) {
+    generadorSort = new TableSortManager({
+      containerSelector: '#gen-thead',
+      onSortChange: () => filterGeneradorProducts()
+    });
+  }
+  return generadorSort;
+}
+
+function toggleGeneradorSort(colKey, type = 'string') {
+  getGeneradorSort().toggleSort(colKey, type);
+}
 
 // Mapa de productos seleccionados y sus copias: { productId: cantidad }
 // Solo contiene entradas con qty >= 1 (productos efectivamente seleccionados)
@@ -35,6 +53,7 @@ async function initGeneradorModule() {
     loadGenProductsCatalog()
   ]);
 
+  getGeneradorSort().updateHeadersUI();
   updateBatchCounterAndSummary();
   updateGuiaCorteToggleUI();
   updateTemplateSelectorUIState();
@@ -240,17 +259,18 @@ function updateCapacidadDisplay(capacidad) {
 async function loadGenProductsCatalog() {
   try {
     const res = await fetch('/api/products');
-    if (!res.ok) return;
-
-    allGenProducts = await res.json();
-    allGenProducts.forEach(p => {
+    const productsData = await res.json();
+    allGenProducts = (Array.isArray(productsData) ? productsData : []).map((p, idx) => {
+      p._origIndex = idx;
       p._searchIndex = normalizeSearchText([
         p.cod_1, p.cod_2, p.producto, p.title,
         p.spec_1, p.spec_2, p.spec_3, p.spec_4, p.spec_5,
         p.etiqueta_tamano
       ].filter(Boolean).join(' '));
+      return p;
     });
 
+    getGeneradorSort().updateHeadersUI();
     filterGeneradorProducts();
   } catch (err) {
     console.error('Error al cargar productos en generador:', err);
@@ -330,7 +350,15 @@ function filterGeneradorProducts() {
     filteredGenProducts = [...templateCompatibleProducts];
   }
 
-  // 3. Actualizar contador dinámico de tabla (ej: 230 / 230, o 8 / 230 al filtrar)
+  // 3. Aplicar ordenamiento de 3 estados
+  filteredGenProducts = getGeneradorSort().sort(filteredGenProducts, (p, col) => {
+    if (col === 'copies') {
+      return selectedBatch.get(p.id) || 0;
+    }
+    return p[col];
+  });
+
+  // 4. Actualizar contador dinámico de tabla (ej: 230 / 230, o 8 / 230 al filtrar)
   const tableCountEl = document.getElementById('gen-table-count');
   if (tableCountEl) {
     tableCountEl.textContent = `${filteredGenProducts.length} / ${totalTemplateCount}`;
@@ -1610,3 +1638,7 @@ function exportarPDF() {
     alert('Ocurrió un error al preparar el pliego para imprimir: ' + (err.message || err));
   }
 }
+
+// Exponer en window para eventos HTML
+window.toggleGeneradorSort = toggleGeneradorSort;
+window.getGeneradorSort = getGeneradorSort;

@@ -9,12 +9,30 @@
 /** Cache local de todos los productos cargados desde SQLite */
 let allProductsCache = [];
 
+/** Gestor de ordenamiento de 3 estados para la tabla de Datos */
+let datosSort = null;
+
+function getDatosSort() {
+  if (!datosSort) {
+    datosSort = new TableSortManager({
+      containerSelector: '#datos-thead',
+      onSortChange: () => filterDatosTable()
+    });
+  }
+  return datosSort;
+}
+
+function toggleDatosSort(colKey, type = 'string') {
+  getDatosSort().toggleSort(colKey, type);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // INICIALIZACIÓN DEL MÓDULO
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function initDatosModule() {
   populateDiasGraciaSelector();
+  getDatosSort().updateHeadersUI();
   await Promise.all([
     loadObsolescenciaStatus(),
     loadProducts()
@@ -134,14 +152,18 @@ async function loadProducts() {
 
     const products = await res.json();
 
-    // Guardar en cache local
-    allProductsCache = Array.isArray(products) ? products : [];
+    // Guardar en cache local asignando índice original para permitir restaurar el orden exacto (Reset)
+    allProductsCache = (Array.isArray(products) ? products : []).map((p, idx) => {
+      p._origIndex = idx;
+      return p;
+    });
 
     // Actualizar contador dinámico con el total devuelto por la API
     _updateProductCounter(allProductsCache.length);
 
-    // Renderizar tabla
-    renderProductsTable(allProductsCache);
+    // Actualizar UI de cabeceras y renderizar tabla ordenada
+    getDatosSort().updateHeadersUI();
+    filterDatosTable();
 
   } catch (err) {
     console.error('Error al cargar productos:', err);
@@ -234,24 +256,31 @@ function renderProductsTable(products) {
   });
 }
 
-// Búsqueda reactiva en tabla de productos
+// Búsqueda reactiva en tabla de productos con soporte de ordenamiento
 function filterDatosTable() {
   const query = (document.getElementById('datos-search')?.value || '').toLowerCase().trim();
-  if (!query) {
-    renderProductsTable(allProductsCache);
-    return;
+  let baseList = allProductsCache;
+
+  if (query) {
+    baseList = allProductsCache.filter(p => {
+      const cod1 = (p.cod_1 || '').toLowerCase();
+      const cod2 = (p.cod_2 || '').toLowerCase();
+      const title = (p.title || '').toLowerCase();
+      const specs = `${p.spec_1 || ''} ${p.spec_2 || ''} ${p.spec_3 || ''} ${p.spec_4 || ''} ${p.spec_5 || ''}`.toLowerCase();
+      const tamano = (p.etiqueta_tamano || p.tamano || '').toLowerCase();
+      return cod1.includes(query) || cod2.includes(query) || title.includes(query) || specs.includes(query) || tamano.includes(query);
+    });
   }
 
-  const filtered = allProductsCache.filter(p => {
-    const cod1 = (p.cod_1 || '').toLowerCase();
-    const cod2 = (p.cod_2 || '').toLowerCase();
-    const title = (p.title || '').toLowerCase();
-    const specs = `${p.spec_1 || ''} ${p.spec_2 || ''} ${p.spec_3 || ''} ${p.spec_4 || ''} ${p.spec_5 || ''}`.toLowerCase();
-    const tamano = (p.etiqueta_tamano || p.tamano || '').toLowerCase();
-    return cod1.includes(query) || cod2.includes(query) || title.includes(query) || specs.includes(query) || tamano.includes(query);
+  // Aplicar ordenamiento de 3 estados
+  const sorted = getDatosSort().sort(baseList, (p, col) => {
+    if (col === 'specs') {
+      return [p.spec_1, p.spec_2, p.spec_3, p.spec_4, p.spec_5].filter(Boolean).join(' ');
+    }
+    return p[col];
   });
 
-  renderProductsTable(filtered);
+  renderProductsTable(sorted);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -590,3 +619,5 @@ window.closeProductModal = closeProductModal;
 window.editProduct = editProduct;
 window.handleProductSubmit = handleProductSubmit;
 window.deleteProduct = deleteProduct;
+window.toggleDatosSort = toggleDatosSort;
+window.getDatosSort = getDatosSort;
