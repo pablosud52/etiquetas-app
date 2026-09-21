@@ -107,7 +107,7 @@ async function initEditorModule() {
     syncUIWithTemplate();
   }
 
-  // Restaurar la pestaña en la que estaba trabajando el usuario (1 = Estructura A4, 2 = Diseño Visual)
+  // Restaurar la pestaña en la que estaba trabajando el usuario (1 = Diseño Visual, 2 = Estructura A4)
   switchEditorTab(activeEditorTab || 1);
 
   if (typeof resetTab1Zoom === 'function') {
@@ -125,8 +125,8 @@ async function initEditorModule() {
 
 // CONTROL DE HISTORIAL (UNDO / REDO - EXCLUSIVO DE DISEÑO VISUAL)
 function pushHistoryState() {
-  const tab2Container = document.getElementById('editor-tab-2-container');
-  if (tab2Container && tab2Container.classList.contains('hidden')) return;
+  const disenoContainer = document.getElementById('editor-tab-1-container');
+  if (disenoContainer && disenoContainer.classList.contains('hidden')) return;
 
   const snapshot = JSON.stringify(currentTemplate);
   if (historyUndo.length === 0 || historyUndo[historyUndo.length - 1] !== snapshot) {
@@ -138,8 +138,8 @@ function pushHistoryState() {
 }
 
 function undoAction() {
-  const tab2Container = document.getElementById('editor-tab-2-container');
-  if (tab2Container && tab2Container.classList.contains('hidden')) return;
+  const disenoContainer = document.getElementById('editor-tab-1-container');
+  if (disenoContainer && disenoContainer.classList.contains('hidden')) return;
 
   if (historyUndo.length === 0) return;
   const currentSnapshot = JSON.stringify(currentTemplate);
@@ -152,8 +152,8 @@ function undoAction() {
 }
 
 function redoAction() {
-  const tab2Container = document.getElementById('editor-tab-2-container');
-  if (tab2Container && tab2Container.classList.contains('hidden')) return;
+  const disenoContainer = document.getElementById('editor-tab-1-container');
+  if (disenoContainer && disenoContainer.classList.contains('hidden')) return;
 
   if (historyRedo.length === 0) return;
   const currentSnapshot = JSON.stringify(currentTemplate);
@@ -305,35 +305,27 @@ function syncUIWithTemplate() {
   if (typeof filterEditorProductsTable   === 'function') filterEditorProductsTable();
 }
 
-// NAVEGACIÓN Y ALTERNANCIA DE PESTAÑAS (TAB 1 VS TAB 2)
+// NAVEGACIÓN Y ALTERNANCIA DE PESTAÑAS (TAB 1: DISEÑO VISUAL VS TAB 2: ESTRUCTURA A4)
 function switchEditorTab(tabNumber) {
   activeEditorTab = Number(tabNumber) || 1;
 
   const btnTab1 = document.getElementById('tab-btn-1') || document.getElementById('btn-editor-tab-1');
   const btnTab2 = document.getElementById('tab-btn-2') || document.getElementById('btn-editor-tab-2');
-  const containerTab1 = document.getElementById('editor-tab-1-container');
-  const containerTab2 = document.getElementById('editor-tab-2-container');
+  const containerTab1 = document.getElementById('editor-tab-1-container'); // Diseño Visual
+  const containerTab2 = document.getElementById('editor-tab-2-container'); // Estructura A4
 
   if (!containerTab1 || !containerTab2) return;
 
   const activeTabClass = 'px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer bg-blue-600 text-white shadow-md flex items-center gap-2';
   const inactiveTabClass = 'px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 flex items-center gap-2';
 
-  if (tabNumber === 1) {
+  if (activeEditorTab === 1) {
+    // Activar Pestaña 1: Diseño Visual
     if (btnTab1) btnTab1.className = activeTabClass;
     if (btnTab2) btnTab2.className = inactiveTabClass;
     
     containerTab1.classList.remove('hidden');
     containerTab2.classList.add('hidden');
-
-    if (typeof initTab1BaseSize === 'function') initTab1BaseSize();
-    if (typeof renderMatrizA4Tab1 === 'function') renderMatrizA4Tab1();
-  } else {
-    if (btnTab2) btnTab2.className = activeTabClass;
-    if (btnTab1) btnTab1.className = inactiveTabClass;
-
-    containerTab2.classList.remove('hidden');
-    containerTab1.classList.add('hidden');
 
     if (typeof renderPropertySwitches === 'function') renderPropertySwitches();
     if (typeof renderAllAccordionSections === 'function') renderAllAccordionSections();
@@ -341,24 +333,34 @@ function switchEditorTab(tabNumber) {
     if (typeof populateEditorTamanoSelect === 'function') populateEditorTamanoSelect();
     if (typeof filterEditorProductsTable === 'function') filterEditorProductsTable();
     updateUndoRedoButtons();
+  } else {
+    // Activar Pestaña 2: Estructura A4
+    if (btnTab2) btnTab2.className = activeTabClass;
+    if (btnTab1) btnTab1.className = inactiveTabClass;
+
+    containerTab2.classList.remove('hidden');
+    containerTab1.classList.add('hidden');
+
+    if (typeof initTab1BaseSize === 'function') initTab1BaseSize();
+    if (typeof renderMatrizA4Tab1 === 'function') renderMatrizA4Tab1();
   }
 }
 
 // CONTROL POR TECLADO (EXCLUSIVO DE DISEÑO VISUAL)
 function handleEditorKeyDown(e) {
-  const tab2Container = document.getElementById('editor-tab-2-container');
-  const isTab2Active = tab2Container && !tab2Container.classList.contains('hidden');
+  const disenoContainer = document.getElementById('editor-tab-1-container');
+  const isDisenoActive = disenoContainer && !disenoContainer.classList.contains('hidden');
 
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-    if (!isTab2Active) return;
+    if (!isDisenoActive) return;
     e.preventDefault();
     undoAction();
   } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-    if (!isTab2Active) return;
+    if (!isDisenoActive) return;
     e.preventDefault();
     redoAction();
   } else if (selectedElementId && currentTemplate.elementos[selectedElementId]) {
-    if (!isTab2Active) return;
+    if (!isDisenoActive) return;
     const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
     if (activeTag === 'input' || activeTag === 'select' || activeTag === 'textarea') return;
 

@@ -127,9 +127,9 @@ async function saveMatrizA4Config() {
   }
 }
 
-// Helper para replegar/desplegar todas las secciones de la Pestaña 1
+// Helper para replegar/desplegar todas las secciones de la pestaña Estructura A4
 function toggleAllTab1Accordions(expand) {
-  ['tab1-dim', 'tab1-matriz', 'tab1-corte'].forEach(id => {
+  ['tab1-matriz', 'tab1-corte'].forEach(id => {
     const content = document.getElementById(`content-${id}`);
     const arrow = document.getElementById(`arrow-${id}`);
     if (content) {
