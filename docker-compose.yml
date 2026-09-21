@@ -7,7 +7,7 @@ services:
     container_name: etiquetas-app
     restart: unless-stopped
     ports:
-      - "5252:8080"
+      - "1010:8080"
     environment:
       - TZ=America/Montevideo
       - PORT=8080
