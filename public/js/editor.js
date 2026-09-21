@@ -7,50 +7,7 @@
 // =========================================================================
 
 // ESTADO GLOBAL COMPARTIDO ENTRE MÓDULOS
-var currentTemplate = {
-  id: null,
-  nombre: 'Plantilla Básica Standard 10x5',
-  ancho: 10.0,
-  alto: 5.0,
-  etiqueta_tamano: 'Personalizado',
-  orientacion: 'horizontal',
-  slots_fondo: [
-    { id: 0, url: '', nombre: '' },
-    { id: 1, url: '', nombre: '' },
-    { id: 2, url: '', nombre: '' }
-  ],
-  slot_activo: 0,
-  campos_habilitados: ['title', 'spec_1', 'moneda', 'publico_entero', 'publico_decimal', 'cod_1'],
-  elementos: {
-    title: { x: 5, y: 10, fuente: 'Montserrat', tamano: 22, color: '#1e293b', bold: true, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    spec_1: { x: 5, y: 35, fuente: 'Roboto', tamano: 14, color: '#475569', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    spec_2: { x: 5, y: 48, fuente: 'Roboto', tamano: 12, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    spec_3: { x: 5, y: 60, fuente: 'Roboto', tamano: 12, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    spec_4: { x: 5, y: 70, fuente: 'Roboto', tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    spec_5: { x: 5, y: 80, fuente: 'Roboto', tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    moneda: { x: 62, y: 48, fuente: 'Montserrat', tamano: 18, color: '#0f172a', bold: true, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    publico_entero: { x: 70, y: 40, fuente: 'Oswald', tamano: 44, color: '#0f172a', bold: true, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    publico_decimal: { x: 90, y: 42, fuente: 'Oswald', tamano: 22, color: '#0f172a', bold: true, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    cod_1: { x: 5, y: 85, fuente: 'Roboto Mono', tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    cod_2: { x: 40, y: 85, fuente: 'Roboto Mono', tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-    distribuidor: { x: 70, y: 85, fuente: 'Roboto', tamano: 12, color: '#475569', bold: true, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 }
-  },
-  matriz_a4: {
-    columnas: 2,
-    filas: 4,
-    margin_top: 1.0,
-    margin_left: 1.0,
-    gap_x: 0.5,
-    gap_y: 0.5,
-    corte_tipo: 'solid',
-    corte_grosor: 1,
-    corte_color: '#94a3b8',
-    corte_h_activo: true,
-    corte_h_modo: 'pegadas',
-    corte_v_activo: true,
-    corte_v_modo: 'pegadas'
-  }
-};
+var currentTemplate = null;
 
 var FIELD_DEFINITIONS = [
   { id: 'title', label: 'Título (Producto)', defaultVal: 'NOMBRE DEL PRODUCTO MUESTRA' },
@@ -102,9 +59,10 @@ async function initEditorModule() {
     const select = document.getElementById('editor-template-select') || document.getElementById('tpl-selector');
     if (select && currentTemplate && currentTemplate.id) {
       select.value = String(currentTemplate.id);
+      syncUIWithTemplate();
+    } else {
+      setEditorEmptyState();
     }
-    // Sincronizar todos los inputs y renders con el estado actual
-    syncUIWithTemplate();
   }
 
   // Restaurar la pestaña en la que estaba trabajando el usuario (1 = Diseño Visual, 2 = Estructura A4)
@@ -123,8 +81,89 @@ async function initEditorModule() {
   };
 }
 
+// GESTIÓN DE ESTADO VACÍO (CUANDO NO HAY PLANTILLA SELECCIONADA)
+function setEditorEmptyState() {
+  currentTemplate = null;
+  selectedElementId = null;
+  historyUndo = [];
+  historyRedo = [];
+  updateUndoRedoButtons();
+
+  const overlay = document.getElementById('editor-empty-state');
+  if (overlay) overlay.classList.remove('hidden');
+
+  const nameInput = document.getElementById('tpl-nombre');
+  if (nameInput) {
+    nameInput.value = '';
+    nameInput.placeholder = '(Sin plantilla seleccionada)';
+    nameInput.disabled = true;
+    nameInput.classList.add('opacity-50', 'cursor-not-allowed');
+  }
+
+  const select = document.getElementById('editor-template-select') || document.getElementById('tpl-selector');
+  if (select) select.value = '';
+
+  const btnDel = document.getElementById('btn-delete-tpl');
+  if (btnDel) {
+    btnDel.disabled = true;
+    btnDel.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+  }
+
+  const btnSave = document.getElementById('btn-save-tpl');
+  if (btnSave) {
+    btnSave.disabled = true;
+    btnSave.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+  }
+
+  const badge = document.getElementById('canvas-dimension-badge');
+  if (badge) badge.textContent = '-- x --';
+
+  // Limpiar capas visuales interactivas y pliego A4
+  const elementsLayer = document.getElementById('canvas-elements-layer');
+  if (elementsLayer) elementsLayer.innerHTML = '';
+
+  const canvas = document.getElementById('editor-canvas');
+  if (canvas) {
+    canvas.style.backgroundImage = 'none';
+  }
+
+  const sheet = document.getElementById('tab1-a4-preview-sheet');
+  if (sheet) sheet.innerHTML = '';
+
+  const dynamicAccordions = document.getElementById('dynamic-property-accordions');
+  if (dynamicAccordions) dynamicAccordions.innerHTML = '';
+
+  const switchesContainer = document.getElementById('props-switches-container');
+  if (switchesContainer) switchesContainer.innerHTML = '';
+}
+
+function exitEditorEmptyState() {
+  const overlay = document.getElementById('editor-empty-state');
+  if (overlay) overlay.classList.add('hidden');
+
+  const nameInput = document.getElementById('tpl-nombre');
+  if (nameInput) {
+    nameInput.disabled = false;
+    nameInput.placeholder = 'Nombre de plantilla (ej: Oferta 10.0x5.0)';
+    nameInput.classList.remove('opacity-50', 'cursor-not-allowed');
+  }
+
+  const btnDel = document.getElementById('btn-delete-tpl');
+  if (btnDel) {
+    btnDel.disabled = false;
+    btnDel.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+  }
+
+  const btnSave = document.getElementById('btn-save-tpl');
+  if (btnSave) {
+    btnSave.disabled = false;
+    btnSave.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+  }
+}
+
 // CONTROL DE HISTORIAL (UNDO / REDO - EXCLUSIVO DE DISEÑO VISUAL)
 function pushHistoryState() {
+  if (!currentTemplate) return;
   const disenoContainer = document.getElementById('editor-tab-1-container');
   if (disenoContainer && disenoContainer.classList.contains('hidden')) return;
 
@@ -138,6 +177,7 @@ function pushHistoryState() {
 }
 
 function undoAction() {
+  if (!currentTemplate) return;
   const disenoContainer = document.getElementById('editor-tab-1-container');
   if (disenoContainer && disenoContainer.classList.contains('hidden')) return;
 
@@ -152,6 +192,7 @@ function undoAction() {
 }
 
 function redoAction() {
+  if (!currentTemplate) return;
   const disenoContainer = document.getElementById('editor-tab-1-container');
   if (disenoContainer && disenoContainer.classList.contains('hidden')) return;
 
@@ -168,13 +209,14 @@ function redoAction() {
 function updateUndoRedoButtons() {
   const btnUndo = document.getElementById('btn-undo');
   const btnRedo = document.getElementById('btn-redo');
-  if (btnUndo) btnUndo.disabled = historyUndo.length === 0;
-  if (btnRedo) btnRedo.disabled = historyRedo.length === 0;
+  if (btnUndo) btnUndo.disabled = !currentTemplate || historyUndo.length === 0;
+  if (btnRedo) btnRedo.disabled = !currentTemplate || historyRedo.length === 0;
 }
 
 // NORMALIZACIÓN DEFENSIVA: garantiza que currentTemplate siempre tenga
 // las propiedades correctas independientemente de lo que devuelva la API.
 function _normalizarPlantilla(tpl) {
+  if (!tpl || typeof tpl !== 'object') return null;
   // 1. ID siempre numérico o null
   tpl.id = tpl.id != null ? Number(tpl.id) || null : null;
 
@@ -257,6 +299,12 @@ function _normalizarPlantilla(tpl) {
 
 // SINCRONIZAR TODA LA INTERFAZ TRAS CARGAR O REVERTIR PLANTILLA
 function syncUIWithTemplate() {
+  if (!currentTemplate) {
+    setEditorEmptyState();
+    return;
+  }
+  exitEditorEmptyState();
+
   // Normalizar siempre antes de acceder a cualquier propiedad
   _normalizarPlantilla(currentTemplate);
 
@@ -433,6 +481,9 @@ function initSplitters() {
   }
 }
 
+var cachedTemplatesList = [];
+var currentNewTemplateMode = 'base';
+
 // PERSISTENCIA Y GESTIÓN DE PLANTILLAS (API CRUD)
 async function loadTemplateSelectOptions() {
   const select = document.getElementById('editor-template-select') || document.getElementById('tpl-selector');
@@ -442,6 +493,7 @@ async function loadTemplateSelectOptions() {
     const res = await fetch('/api/templates');
     if (!res.ok) return;
     const templates = await res.json();
+    cachedTemplatesList = templates;
     templates.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', undefined, { sensitivity: 'base', numeric: true }));
 
     select.innerHTML = '<option value="">-- Cargar Plantilla --</option>';
@@ -449,7 +501,7 @@ async function loadTemplateSelectOptions() {
       const opt = document.createElement('option');
       opt.value = t.id;
       opt.textContent = `${t.nombre} (${t.ancho}x${t.alto}cm)`;
-      if (currentTemplate.id && Number(t.id) === Number(currentTemplate.id)) {
+      if (currentTemplate && currentTemplate.id && Number(t.id) === Number(currentTemplate.id)) {
         opt.selected = true;
       }
       select.appendChild(opt);
@@ -485,22 +537,26 @@ async function loadTemplateById(id) {
 }
 
 function handleTemplateSelectChange(id) {
-  if (!id) return;
+  if (!id) {
+    setEditorEmptyState();
+    return;
+  }
   loadTemplateById(id);
 }
 
 function loadTemplateForEdit(id) {
-  if (!id) return;
+  if (!id) {
+    setEditorEmptyState();
+    return;
+  }
   loadTemplateById(id);
 }
 
-function createNewTemplate() {
-  pushHistoryState();
-  const nombreDefault = `Nueva Plantilla ${Date.now().toString().slice(-4)}`;
-  currentTemplate = _normalizarPlantilla({
+function getBaseTemplateConfig(nombre = '') {
+  return _normalizarPlantilla({
     id: null,
-    nombre: nombreDefault,
-    ancho: 10.0,
+    nombre: nombre || `Plantilla Base ${Date.now().toString().slice(-4)}`,
+    ancho: 5.0,
     alto: 5.0,
     etiqueta_tamano: 'Personalizado',
     orientacion: 'horizontal',
@@ -510,33 +566,180 @@ function createNewTemplate() {
       { id: 2, url: '', nombre: '' }
     ],
     slot_activo: 0,
-    campos_habilitados: ['title', 'spec_1', 'moneda', 'publico_entero', 'publico_decimal', 'cod_1'],
+    campos_habilitados: ['title', 'moneda', 'publico_entero', 'publico_decimal', 'cod_2'],
     elementos: {
-      title:           { x: 5,  y: 10, fuente: 'Montserrat',  tamano: 22, color: '#1e293b', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      spec_1:          { x: 5,  y: 35, fuente: 'Roboto',       tamano: 14, color: '#475569', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      spec_2:          { x: 5,  y: 48, fuente: 'Roboto',       tamano: 12, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      spec_3:          { x: 5,  y: 60, fuente: 'Roboto',       tamano: 12, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      spec_4:          { x: 5,  y: 70, fuente: 'Roboto',       tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      spec_5:          { x: 5,  y: 80, fuente: 'Roboto',       tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      moneda:          { x: 62, y: 48, fuente: 'Montserrat',   tamano: 18, color: '#0f172a', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      publico_entero:  { x: 70, y: 40, fuente: 'Oswald',       tamano: 44, color: '#0f172a', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      publico_decimal: { x: 90, y: 42, fuente: 'Oswald',       tamano: 22, color: '#0f172a', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      cod_1:           { x: 5,  y: 85, fuente: 'Roboto Mono',  tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      cod_2:           { x: 40, y: 85, fuente: 'Roboto Mono',  tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
-      distribuidor:    { x: 70, y: 85, fuente: 'Roboto',        tamano: 12, color: '#475569', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 }
+      title:           { x: 5,  y: 8,  fuente: 'Montserrat',  tamano: 16, color: '#1e293b', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      spec_1:          { x: 5,  y: 35, fuente: 'Roboto',       tamano: 12, color: '#475569', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      spec_2:          { x: 5,  y: 48, fuente: 'Roboto',       tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      spec_3:          { x: 5,  y: 60, fuente: 'Roboto',       tamano: 11, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      spec_4:          { x: 5,  y: 70, fuente: 'Roboto',       tamano: 10, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      spec_5:          { x: 5,  y: 80, fuente: 'Roboto',       tamano: 10, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      moneda:          { x: 18, y: 44, fuente: 'Montserrat',   tamano: 16, color: '#0f172a', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      publico_entero:  { x: 30, y: 36, fuente: 'Oswald',       tamano: 36, color: '#0f172a', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      publico_decimal: { x: 68, y: 38, fuente: 'Oswald',       tamano: 18, color: '#0f172a', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      cod_1:           { x: 5,  y: 82, fuente: 'Roboto Mono',  tamano: 10, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      cod_2:           { x: 5,  y: 82, fuente: 'Roboto Mono',  tamano: 10, color: '#64748b', bold: false, italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 },
+      distribuidor:    { x: 50, y: 82, fuente: 'Roboto',        tamano: 11, color: '#475569', bold: true,  italic: false, alineacion: 'left', espaciado: 0, stroke_activo: false, stroke_color: '#000000', stroke_width: 1.0 }
     },
     matriz_a4: {
-      columnas: 2, filas: 4,
+      columnas: 1, filas: 1,
       margin_top: 1.0, margin_left: 1.0,
-      gap_x: 0.5,  gap_y: 0.5,
+      gap_x: 0.0,  gap_y: 0.0,
       corte_tipo: 'solid', corte_grosor: 1, corte_color: '#94a3b8',
-      corte_h_activo: true, corte_h_modo: 'pegadas',
-      corte_v_activo: true, corte_v_modo: 'pegadas'
+      corte_h_activo: false, corte_h_modo: 'pegadas',
+      corte_v_activo: false, corte_v_modo: 'pegadas'
     }
   });
+}
 
+// GESTIÓN DEL MODAL DE CREACIÓN / DUPLICACIÓN DE PLANTILLA
+async function openNewTemplateModal() {
+  try {
+    const res = await fetch('/api/templates');
+    if (res.ok) cachedTemplatesList = await res.json();
+  } catch (_) {}
+
+  const hasActiveTemplate = currentTemplate && currentTemplate.id != null && Number(currentTemplate.id) > 0;
+  const btnDup = document.getElementById('btn-mode-duplicate');
+  if (btnDup) {
+    if (hasActiveTemplate) {
+      btnDup.disabled = false;
+      btnDup.className = 'p-3 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500';
+      btnDup.title = `Duplicar plantilla activa: "${currentTemplate.nombre}"`;
+    } else {
+      btnDup.disabled = true;
+      btnDup.className = 'p-3 rounded-xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed opacity-40';
+      btnDup.title = 'Selecciona primero una plantilla para duplicarla';
+    }
+  }
+
+  selectNewTemplateMode('base');
+
+  const modal = document.getElementById('modal-new-template');
+  if (modal) modal.classList.remove('hidden');
+
+  setTimeout(() => {
+    const input = document.getElementById('modal-tpl-nombre');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 60);
+}
+
+function closeNewTemplateModal() {
+  const modal = document.getElementById('modal-new-template');
+  if (modal) modal.classList.add('hidden');
+}
+
+function selectNewTemplateMode(mode) {
+  const hasActiveTemplate = currentTemplate && currentTemplate.id != null && Number(currentTemplate.id) > 0;
+  if (mode === 'duplicate' && !hasActiveTemplate) return;
+
+  currentNewTemplateMode = mode;
+  const btnBase = document.getElementById('btn-mode-base');
+  const btnDup = document.getElementById('btn-mode-duplicate');
+  const input = document.getElementById('modal-tpl-nombre');
+
+  if (mode === 'base') {
+    if (btnBase) btnBase.className = 'p-3 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 bg-blue-600/20 border-blue-500 text-white shadow-md';
+    if (btnDup && hasActiveTemplate) {
+      btnDup.className = 'p-3 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500';
+    }
+    if (input) {
+      input.placeholder = 'Ej: Oferta 5.0x5.0';
+      input.value = '';
+    }
+  } else {
+    if (btnDup) btnDup.className = 'p-3 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 bg-purple-600/20 border-purple-500 text-white shadow-md';
+    if (btnBase) btnBase.className = 'p-3 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500';
+
+    const baseName = (currentTemplate && currentTemplate.nombre) ? currentTemplate.nombre.trim() : 'Plantilla';
+    let candidate = `${baseName} - Copia`;
+    let counter = 2;
+    const existingNames = cachedTemplatesList.map(t => (t.nombre || '').trim().toLowerCase());
+    while (existingNames.includes(candidate.toLowerCase())) {
+      candidate = `${baseName} - Copia ${counter}`;
+      counter++;
+    }
+    if (input) {
+      input.value = candidate;
+    }
+  }
+
+  validateNewTemplateName();
+}
+
+function validateNewTemplateName() {
+  const input = document.getElementById('modal-tpl-nombre');
+  const feedback = document.getElementById('modal-tpl-feedback');
+  const btnSubmit = document.getElementById('btn-submit-new-tpl');
+  if (!input || !feedback || !btnSubmit) return;
+
+  const val = input.value.trim();
+  if (!val) {
+    feedback.textContent = 'El nombre de la plantilla es obligatorio.';
+    feedback.className = 'text-xs text-amber-400 min-h-[18px]';
+    input.className = 'w-full bg-slate-900 border border-amber-500/60 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 transition';
+    btnSubmit.disabled = true;
+    return;
+  }
+
+  const exists = cachedTemplatesList.some(t => (t.nombre || '').trim().toLowerCase() === val.toLowerCase());
+  if (exists) {
+    feedback.textContent = '⚠️ Ya existe una plantilla con este nombre. Por favor, elige otro.';
+    feedback.className = 'text-xs text-red-400 font-medium min-h-[18px]';
+    input.className = 'w-full bg-slate-900 border border-red-500 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-500 transition';
+    btnSubmit.disabled = true;
+    return;
+  }
+
+  feedback.textContent = '✓ Nombre disponible';
+  feedback.className = 'text-xs text-emerald-400 font-medium min-h-[18px]';
+  input.className = 'w-full bg-slate-900 border border-emerald-500/60 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition';
+  btnSubmit.disabled = false;
+}
+
+function confirmCreateNewTemplate() {
+  const input = document.getElementById('modal-tpl-nombre');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) {
+    alert('Ingresa un nombre para la plantilla.');
+    return;
+  }
+
+  const exists = cachedTemplatesList.some(t => (t.nombre || '').trim().toLowerCase() === name.toLowerCase());
+  if (exists) {
+    alert(`⚠️ Ya existe una plantilla con el nombre "${name}". Por favor, elige un nombre diferente.`);
+    return;
+  }
+
+  pushHistoryState();
+
+  if (currentNewTemplateMode === 'duplicate' && currentTemplate && currentTemplate.id != null) {
+    const clone = JSON.parse(JSON.stringify(currentTemplate));
+    clone.id = null;
+    clone.nombre = name;
+    currentTemplate = _normalizarPlantilla(clone);
+  } else {
+    currentTemplate = getBaseTemplateConfig(name);
+  }
+
+  historyUndo = [];
+  historyRedo = [];
+  updateUndoRedoButtons();
+
+  closeNewTemplateModal();
   syncUIWithTemplate();
-  loadTemplateSelectOptions();
+  switchEditorTab(1);
+
+  const select = document.getElementById('editor-template-select') || document.getElementById('tpl-selector');
+  if (select) select.value = '';
+}
+
+function createNewTemplate() {
+  openNewTemplateModal();
 }
 
 async function confirmDeleteTemplate() {
@@ -544,8 +747,8 @@ async function confirmDeleteTemplate() {
 }
 
 async function deleteCurrentTemplate() {
-  if (!currentTemplate.id) {
-    createNewTemplate();
+  if (!currentTemplate || !currentTemplate.id) {
+    setEditorEmptyState();
     return;
   }
 
@@ -564,8 +767,9 @@ async function deleteCurrentTemplate() {
     if (!res.ok) throw new Error(data.message || 'Error al eliminar plantilla');
 
     alert('✅ Plantilla eliminada con éxito.');
-    createNewTemplate();
+    currentTemplate = null;
     await loadTemplateSelectOptions();
+    setEditorEmptyState();
   } catch (err) {
     alert(err.message);
   }
@@ -573,6 +777,8 @@ async function deleteCurrentTemplate() {
 
 // Sincronizar todos los campos y parámetros geométricos del DOM hacia currentTemplate
 function syncTemplateFromUI() {
+  if (!currentTemplate) return;
+
   const nombreInput = document.getElementById('tpl-nombre');
   if (nombreInput && nombreInput.value.trim()) {
     currentTemplate.nombre = nombreInput.value.trim();
@@ -658,11 +864,27 @@ function syncTemplateFromUI() {
 }
 
 async function saveTemplate() {
+  if (!currentTemplate) {
+    alert('No hay ninguna plantilla seleccionada para guardar.');
+    return;
+  }
+
   // Sincronizar todos los datos del formulario DOM antes de guardar
   syncTemplateFromUI();
 
-  if (!currentTemplate.nombre) {
+  if (!currentTemplate.nombre || !currentTemplate.nombre.trim()) {
     alert('Asigna un nombre a la plantilla antes de guardar.');
+    return;
+  }
+
+  const trimmedName = currentTemplate.nombre.trim();
+  const currentId = currentTemplate.id != null ? Number(currentTemplate.id) : null;
+  const collision = cachedTemplatesList.some(t => 
+    (t.nombre || '').trim().toLowerCase() === trimmedName.toLowerCase() && 
+    Number(t.id) !== currentId
+  );
+  if (collision) {
+    alert(`⚠️ Ya existe una plantilla con el nombre "${trimmedName}". Por favor, elige un nombre diferente antes de guardar.`);
     return;
   }
 
@@ -706,6 +928,8 @@ window.SYSTEM_FONTS = SYSTEM_FONTS;
 window.historyUndo = historyUndo;
 window.historyRedo = historyRedo;
 window.initEditorModule = initEditorModule;
+window.setEditorEmptyState = setEditorEmptyState;
+window.exitEditorEmptyState = exitEditorEmptyState;
 window.pushHistoryState = pushHistoryState;
 window.undoAction = undoAction;
 window.redoAction = redoAction;
@@ -720,6 +944,11 @@ window.loadTemplateById = loadTemplateById;
 window.handleTemplateSelectChange = handleTemplateSelectChange;
 window.loadTemplateForEdit = loadTemplateForEdit;
 window.createNewTemplate = createNewTemplate;
+window.openNewTemplateModal = openNewTemplateModal;
+window.closeNewTemplateModal = closeNewTemplateModal;
+window.selectNewTemplateMode = selectNewTemplateMode;
+window.validateNewTemplateName = validateNewTemplateName;
+window.confirmCreateNewTemplate = confirmCreateNewTemplate;
 window.confirmDeleteTemplate = confirmDeleteTemplate;
 window.deleteCurrentTemplate = deleteCurrentTemplate;
 window.saveTemplate = saveTemplate;

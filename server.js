@@ -893,7 +893,9 @@ app.post('/api/templates', (req, res) => {
     fondo || ''
   ], function(err) {
     if (err) {
-      return res.status(400).json({ success: false, message: 'Error al guardar plantilla (nombre duplicado o formato inválido): ' + err.message });
+      const isUnique = err.message && err.message.includes('UNIQUE constraint failed');
+      const msg = isUnique ? `Ya existe una plantilla con el nombre "${nombre}". Por favor, elige otro nombre.` : err.message;
+      return res.status(400).json({ success: false, message: msg });
     }
     res.json({ success: true, id: this.lastID, message: 'Plantilla guardada con éxito' });
   });
@@ -945,7 +947,9 @@ app.put('/api/templates/:id', (req, res) => {
     id
   ], function(err) {
     if (err) {
-      return res.status(500).json({ success: false, message: 'Error al actualizar plantilla: ' + err.message });
+      const isUnique = err.message && err.message.includes('UNIQUE constraint failed');
+      const msg = isUnique ? `Ya existe una plantilla con el nombre "${nombre}". Por favor, elige otro nombre.` : err.message;
+      return res.status(400).json({ success: false, message: msg });
     }
     res.json({ success: true, message: 'Plantilla actualizada con éxito' });
   });

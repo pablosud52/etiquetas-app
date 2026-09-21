@@ -42,6 +42,7 @@ function updateTab1ZoomDisplay() {
 
 // Actualizar dimensiones unitarias de la etiqueta
 function updateLabelDimensions() {
+  if (!currentTemplate) return;
   pushHistoryState();
 
   let ancho = parseFloat(document.getElementById('tpl-ancho')?.value) || 10.0;
@@ -62,6 +63,7 @@ function updateLabelDimensions() {
 
 // Actualizar categoría/tamaño de etiqueta para filtrado de catálogo
 function updateTemplateEtiquetaTamano(val) {
+  if (!currentTemplate) return;
   pushHistoryState();
   currentTemplate.etiqueta_tamano = (val || '').trim() || 'Personalizado';
   if (typeof filterEditorProductsTable === 'function') {
@@ -71,6 +73,7 @@ function updateTemplateEtiquetaTamano(val) {
 
 // Guardar explícitamente la configuración de la Matriz A4 y persistir en la base de datos
 async function saveMatrizA4Config() {
+  if (!currentTemplate) return;
   pushHistoryState();
 
   if (typeof syncTemplateFromUI === 'function') {
@@ -228,6 +231,7 @@ function renderCutLinesHelper(container, p) {
 
 // Sincronizar parámetros de matriz A4 editados por el usuario hacia currentTemplate y refrescar
 function updateMatrizA4FromInputs() {
+  if (!currentTemplate) return;
   if (!currentTemplate.matriz_a4 || typeof currentTemplate.matriz_a4 !== 'object') {
     currentTemplate.matriz_a4 = {};
   }
@@ -284,6 +288,10 @@ function updateMatrizA4FromInputs() {
 function renderMatrizA4Tab1() {
   const sheet = document.getElementById('tab1-a4-preview-sheet');
   if (!sheet) return;
+  if (!currentTemplate) {
+    sheet.innerHTML = '';
+    return;
+  }
 
   if (typeof _normalizarPlantilla === 'function') {
     _normalizarPlantilla(currentTemplate);

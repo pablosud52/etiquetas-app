@@ -75,6 +75,7 @@ function openAccordionForElement(fieldId, skipScroll = false) {
 
 // SLOTS DE IMAGEN DE FONDO
 function updateBgSlotsUI() {
+  if (!currentTemplate) return;
   if (!currentTemplate.slots_fondo) {
     currentTemplate.slots_fondo = [{ id: 0, url: '', nombre: '' }, { id: 1, url: '', nombre: '' }, { id: 2, url: '', nombre: '' }];
   }
@@ -199,6 +200,10 @@ function downloadActiveBg() {
 function renderPropertySwitches() {
   const container = document.getElementById('props-switches-container');
   if (!container) return;
+  if (!currentTemplate) {
+    container.innerHTML = '';
+    return;
+  }
 
   // Guard defensivo: normalizar campos_habilitados si es necesario
   if (!Array.isArray(currentTemplate.campos_habilitados)) {
@@ -258,6 +263,10 @@ function toggleFieldProperty(fieldId, isChecked) {
 function renderAllAccordionSections() {
   const container = document.getElementById('dynamic-property-accordions');
   if (!container) return;
+  if (!currentTemplate || !Array.isArray(currentTemplate.campos_habilitados)) {
+    container.innerHTML = '';
+    return;
+  }
 
   container.innerHTML = '';
 
@@ -385,6 +394,10 @@ function renderCanvas() {
   const layer = document.getElementById('canvas-elements-layer');
   const viewport = document.getElementById('canvas-viewport');
   if (!canvas || !layer) return;
+  if (!currentTemplate) {
+    layer.innerHTML = '';
+    return;
+  }
 
   const basePxPerCm = 37.8;
   let anchoCm = currentTemplate.ancho || 10.0;
@@ -819,7 +832,7 @@ function populateEditorTamanoSelect() {
   ));
   uniqueSizes.sort((a, b) => a.localeCompare(b));
 
-  const activeSize = (currentTemplate.etiqueta_tamano || '').trim();
+  const activeSize = (currentTemplate && currentTemplate.etiqueta_tamano || '').trim();
   // 'Personalizado' means no filter was saved, treat as 'todos'
   const savedSize = (activeSize && activeSize.toLowerCase() !== 'personalizado') ? activeSize : '';
 
@@ -945,7 +958,7 @@ function filterEditorProductsTable() {
 
   const selectVal = (document.getElementById('editor-prod-tamano-select')?.value || '').trim();
   const filterBySize = document.getElementById('chk-filter-by-size')?.checked;
-  const templateSize = (currentTemplate.etiqueta_tamano || '').trim();
+  const templateSize = (currentTemplate && currentTemplate.etiqueta_tamano || '').trim();
 
   const targetSize = selectVal || (filterBySize ? templateSize : '');
 
