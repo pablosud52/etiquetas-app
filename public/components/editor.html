@@ -252,22 +252,12 @@
             <div class="flex items-center gap-3">
               <span class="font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                Lienzo Interactivo Unitario
+                Lienzo Interactivo
               </span>
-              <span id="canvas-dimension-badge" class="px-2 py-0.5 bg-slate-800 rounded font-mono text-[11px] text-slate-300 border border-slate-700/60">10.0cm x 5.0cm</span>
-              
-              <!-- Botones Deshacer / Rehacer específicos del diseño visual -->
-              <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5 ml-1">
-                <button onclick="undoAction()" id="btn-undo" class="p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Deshacer diseño (Ctrl+Z)">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l6-6M3 10l6 6"></path></svg>
-                </button>
-                <button onclick="redoAction()" id="btn-redo" class="p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Rehacer diseño (Ctrl+Y)">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a5 5 0 00-5 5v2m15-7l-6-6m6 6l-6 6"></path></svg>
-                </button>
-              </div>
+              <span id="canvas-dimension-badge" class="px-2 py-0.5 bg-slate-800 rounded font-mono text-[11px] text-slate-300 border border-slate-700/60">-- x --</span>
 
               <!-- Botones Toggle Cuadrícula e Imán -->
-              <div class="flex items-center gap-1.5 ml-4">
+              <div class="flex items-center gap-1.5 ml-3">
                 <button
                   id="btn-grid-toggle"
                   onclick="toggleGrid()"
@@ -292,17 +282,30 @@
               </div>
             </div>
 
-            <!-- Controles de Zoom Tab 1 (Diseño Visual) -->
-            <div class="flex items-center gap-2">
-              <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5">
-                <button onclick="adjustZoom(-0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Reducir zoom">-</button>
-                <span id="zoom-level-display" class="px-2.5 font-mono text-[11px] text-slate-300 min-w-[45px] text-center font-semibold">100%</span>
-                <button onclick="adjustZoom(0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Aumentar zoom">+</button>
+            <!-- Controles a la derecha: Deshacer / Rehacer + Zoom Tab 1 (Diseño Visual) -->
+            <div class="flex items-center">
+              <!-- Botones Deshacer / Rehacer específicos del diseño visual (con separación destacada a la izquierda del zoom) -->
+              <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5 mr-6">
+                <button onclick="undoAction()" id="btn-undo" class="p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Deshacer diseño (Ctrl+Z)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l6-6M3 10l6 6"></path></svg>
+                </button>
+                <button onclick="redoAction()" id="btn-redo" class="p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Rehacer diseño (Ctrl+Y)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a5 5 0 00-5 5v2m15-7l-6-6m6 6l-6 6"></path></svg>
+                </button>
               </div>
-              <button onclick="resetZoomTo100()" class="flex items-center gap-1 px-2.5 py-1 bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg text-[11px] font-semibold cursor-pointer transition-all" title="Restablecer zoom a 100%">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                100%
-              </button>
+
+              <!-- Controles de Zoom -->
+              <div class="flex items-center gap-2">
+                <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700/60 p-0.5">
+                  <button onclick="adjustZoom(-0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Reducir zoom">-</button>
+                  <span id="zoom-level-display" class="px-2.5 font-mono text-[11px] text-slate-300 min-w-[45px] text-center font-semibold">100%</span>
+                  <button onclick="adjustZoom(0.15)" class="px-2.5 py-1 text-slate-400 hover:text-white rounded cursor-pointer font-bold text-xs" title="Aumentar zoom">+</button>
+                </div>
+                <button onclick="resetZoomTo100()" class="flex items-center gap-1 px-2.5 py-1 bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-white hover:border-slate-500 rounded-lg text-[11px] font-semibold cursor-pointer transition-all" title="Restablecer zoom a 100%">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  100%
+                </button>
+              </div>
             </div>
           </div>
 
@@ -452,7 +455,22 @@
             </button>
 
             <div id="content-tab1-matriz" class="accordion-content p-3.5 space-y-3 pt-0 border-t border-slate-700/30 hidden">
-              <div class="grid grid-cols-2 gap-3 text-xs pt-2">
+              <!-- Selector de Orientación de Hoja A4 (Vertical vs Horizontal) -->
+              <div class="space-y-1.5 pb-2.5 pt-2 border-b border-slate-700/50">
+                <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider">Orientación de Hoja A4</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" id="btn-hoja-vertical" onclick="setHojaOrientacion('vertical')" class="py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-blue-600 border-blue-500 text-white shadow-md" title="Hoja A4 Vertical (21.0 x 29.7 cm)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>Vertical</span>
+                  </button>
+                  <button type="button" id="btn-hoja-horizontal" onclick="setHojaOrientacion('horizontal')" class="py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200" title="Hoja A4 Horizontal (29.7 x 21.0 cm)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v6m4-6v6m5 2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2z"></path></svg>
+                    <span>Horizontal</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 text-xs pt-1">
                 <div>
                   <label class="block text-slate-400 mb-1">Columnas</label>
                   <input type="number" id="tpl-matriz-cols" value="2" min="1" max="10" oninput="updateMatrizA4FromInputs()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono">
@@ -562,7 +580,7 @@
           <div class="flex flex-col items-start gap-2">
             <span class="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Lienzo Vectorial A4 en Blanco (21.0 x 29.7 cm)
+              Lienzo Vectorial A4 (<span id="tab1-sheet-dimension-label">21.0 x 29.7 cm</span>)
             </span>
             <div class="flex items-center gap-2 flex-wrap">
               <span id="tab1-badge-count" class="px-2.5 py-1 bg-slate-800 rounded-lg font-mono text-[11px] text-emerald-400 border border-slate-700 font-bold">8 etiquetas / pliego</span>

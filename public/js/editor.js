@@ -135,6 +135,13 @@ function setEditorEmptyState() {
 
   const switchesContainer = document.getElementById('props-switches-container');
   if (switchesContainer) switchesContainer.innerHTML = '';
+
+  const btnVertical = document.getElementById('btn-hoja-vertical');
+  const btnHorizontal = document.getElementById('btn-hoja-horizontal');
+  if (btnVertical && btnHorizontal) {
+    btnVertical.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-blue-600 border-blue-500 text-white shadow-md';
+    btnHorizontal.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200';
+  }
 }
 
 function exitEditorEmptyState() {
@@ -283,6 +290,7 @@ function _normalizarPlantilla(tpl) {
   if (m.corte_h_modo  == null) m.corte_h_modo  = 'pegadas';
   if (m.corte_v_activo == null) m.corte_v_activo = true;
   if (m.corte_v_modo  == null) m.corte_v_modo  = 'pegadas';
+  if (!m.hoja_orientacion) m.hoja_orientacion = 'vertical';
 
   // 5. slots_fondo siempre array de 3 slots
   if (!Array.isArray(tpl.slots_fondo) || tpl.slots_fondo.length < 3) {
@@ -320,11 +328,32 @@ function syncUIWithTemplate() {
   const altoInput = document.getElementById('tpl-alto');
   if (altoInput) altoInput.value = (currentTemplate.alto || 5.0).toFixed(1);
 
+  const dimBadge = document.getElementById('canvas-dimension-badge');
+  if (dimBadge) {
+    const w = (currentTemplate.ancho || 10.0).toFixed(1);
+    const h = (currentTemplate.alto || 5.0).toFixed(1);
+    dimBadge.textContent = `${w}cm x ${h}cm`;
+  }
+
   const m = currentTemplate.matriz_a4;
   if (m.margin_top  > 5) m.margin_top  = parseFloat((m.margin_top  / 10).toFixed(1));
   if (m.margin_left > 5) m.margin_left = parseFloat((m.margin_left / 10).toFixed(1));
   if (m.gap_x > 3)       m.gap_x       = parseFloat((m.gap_x       / 10).toFixed(1));
   if (m.gap_y > 3)       m.gap_y       = parseFloat((m.gap_y       / 10).toFixed(1));
+
+  // Botones de orientación de hoja A4
+  const btnVertical = document.getElementById('btn-hoja-vertical');
+  const btnHorizontal = document.getElementById('btn-hoja-horizontal');
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+  if (btnVertical && btnHorizontal) {
+    if (isLandscape) {
+      btnHorizontal.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-blue-600 border-blue-500 text-white shadow-md';
+      btnVertical.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200';
+    } else {
+      btnVertical.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-blue-600 border-blue-500 text-white shadow-md';
+      btnHorizontal.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200';
+    }
+  }
 
   if (document.getElementById('tpl-matriz-cols'))        document.getElementById('tpl-matriz-cols').value        = m.columnas || 2;
   if (document.getElementById('tpl-matriz-rows'))        document.getElementById('tpl-matriz-rows').value        = m.filas    || 4;
@@ -587,7 +616,8 @@ function getBaseTemplateConfig(nombre = '') {
       gap_x: 0.0,  gap_y: 0.0,
       corte_tipo: 'solid', corte_grosor: 1, corte_color: '#94a3b8',
       corte_h_activo: false, corte_h_modo: 'pegadas',
-      corte_v_activo: false, corte_v_modo: 'pegadas'
+      corte_v_activo: false, corte_v_modo: 'pegadas',
+      hoja_orientacion: 'vertical'
     }
   });
 }
@@ -861,6 +891,56 @@ function syncTemplateFromUI() {
 
   const elCorteVModo = document.getElementById('tpl-matriz-corte-v-modo');
   if (elCorteVModo) m.corte_v_modo = elCorteVModo.value || m.corte_v_modo || 'pegadas';
+
+  const btnHorizontal = document.getElementById('btn-hoja-horizontal');
+  if (btnHorizontal) {
+    m.hoja_orientacion = btnHorizontal.classList.contains('bg-blue-600') ? 'horizontal' : 'vertical';
+  } else if (!m.hoja_orientacion) {
+    m.hoja_orientacion = 'vertical';
+  }
+}
+
+// CAMBIO DE ORIENTACIÓN DE HOJA A4 (VERTICAL / HORIZONTAL)
+function setHojaOrientacion(orientacion) {
+  if (!currentTemplate) return;
+  if (!currentTemplate.matriz_a4 || typeof currentTemplate.matriz_a4 !== 'object') {
+    currentTemplate.matriz_a4 = {};
+  }
+  const currentOrientacion = currentTemplate.matriz_a4.hoja_orientacion || 'vertical';
+  if (currentOrientacion === orientacion) return;
+
+  pushHistoryState();
+
+  currentTemplate.matriz_a4.hoja_orientacion = orientacion;
+
+  // Al cambiar la orientación, intercambiar columnas y filas adaptando la maquetación
+  const elCols = document.getElementById('tpl-matriz-cols');
+  const elRows = document.getElementById('tpl-matriz-rows');
+  const prevCols = parseInt(elCols && elCols.value ? elCols.value : (currentTemplate.matriz_a4.columnas || 2), 10);
+  const prevRows = parseInt(elRows && elRows.value ? elRows.value : (currentTemplate.matriz_a4.filas || 4), 10);
+
+  currentTemplate.matriz_a4.columnas = prevRows;
+  currentTemplate.matriz_a4.filas = prevCols;
+
+  if (elCols) elCols.value = prevRows;
+  if (elRows) elRows.value = prevCols;
+
+  // Actualizar botones visuales
+  const btnVertical = document.getElementById('btn-hoja-vertical');
+  const btnHorizontal = document.getElementById('btn-hoja-horizontal');
+  if (btnVertical && btnHorizontal) {
+    if (orientacion === 'horizontal') {
+      btnHorizontal.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-blue-600 border-blue-500 text-white shadow-md';
+      btnVertical.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200';
+    } else {
+      btnVertical.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-blue-600 border-blue-500 text-white shadow-md';
+      btnHorizontal.className = 'py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200';
+    }
+  }
+
+  if (typeof renderMatrizA4Tab1 === 'function') {
+    renderMatrizA4Tab1();
+  }
 }
 
 async function saveTemplate() {
@@ -953,4 +1033,5 @@ window.confirmDeleteTemplate = confirmDeleteTemplate;
 window.deleteCurrentTemplate = deleteCurrentTemplate;
 window.saveTemplate = saveTemplate;
 window.syncTemplateFromUI = syncTemplateFromUI;
+window.setHojaOrientacion = setHojaOrientacion;
 window.normalizeTemplate = _normalizarPlantilla;

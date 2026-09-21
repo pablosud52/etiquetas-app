@@ -224,7 +224,7 @@ function updateTemplateSelectorUIState() {
 function handleGeneradorTemplateChange(templateId) {
   if (!templateId) {
     activeGenTemplate = null;
-    updateCapacidadDisplay(0);
+    updateCapacidadDisplay(0, false);
     filterGeneradorProducts();
     updateBatchCounterAndSummary();
     renderGeneradorPagePreview();
@@ -245,7 +245,7 @@ function handleGeneradorTemplateChange(templateId) {
       _normalizarPlantilla(activeGenTemplate);
     }
     const dims = getTemplateMmDimensions(activeGenTemplate);
-    updateCapacidadDisplay(dims.cols * dims.rows);
+    updateCapacidadDisplay(dims.cols * dims.rows, dims.isLandscape);
   }
 
   currentPageIndex = 0;
@@ -255,10 +255,15 @@ function handleGeneradorTemplateChange(templateId) {
   updateTemplateSelectorUIState();
 }
 
-function updateCapacidadDisplay(capacidad) {
+function updateCapacidadDisplay(capacidad, isLandscape = false) {
   const badgeText = document.getElementById('gen-capacidad-text');
   if (badgeText) {
-    badgeText.textContent = capacidad > 0 ? `${capacidad} etiq / hoja A4` : '- etiq / hoja A4';
+    if (capacidad > 0) {
+      const oriStr = isLandscape ? 'A4 Horizontal' : 'A4 Vertical';
+      badgeText.textContent = `${capacidad} etiq / ${oriStr}`;
+    } else {
+      badgeText.textContent = '- etiq / hoja A4';
+    }
   }
 }
 
@@ -634,10 +639,12 @@ function openGuiaCorteSettings() {
   }
 
   const m = activeGenTemplate.matriz_a4 || {};
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+  const a4Text = isLandscape ? 'A4 Horizontal (29.7 x 21.0 cm)' : 'A4 Vertical (21.0 x 29.7 cm)';
   const totalEtiq = (parseInt(m.columnas, 10) || 2) * (parseInt(m.filas, 10) || 4);
   const badgeMetric = document.getElementById('modal-corte-metric-badge');
   if (badgeMetric) {
-    badgeMetric.textContent = `${activeGenTemplate.ancho || 10.0}x${activeGenTemplate.alto || 5.0} cm | ${totalEtiq} etiq / pliego`;
+    badgeMetric.textContent = `${activeGenTemplate.ancho || 10.0}x${activeGenTemplate.alto || 5.0} cm | ${totalEtiq} etiq / pliego | ${a4Text}`;
   }
 
   modalCorteZoom = 1.0;
@@ -732,9 +739,11 @@ function renderModalCortePreview() {
   if (labelW_cm > 30) labelW_cm /= 10;
   if (labelH_cm > 30) labelH_cm /= 10;
 
-  const baseH = MODAL_CORTE_BASE_H;
-  const baseW = baseH * (21.0 / 29.7);
-  const scale = baseW / 21.0;
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+
+  const baseH = isLandscape ? MODAL_CORTE_BASE_H * (21.0 / 29.7) : MODAL_CORTE_BASE_H;
+  const baseW = isLandscape ? MODAL_CORTE_BASE_H : MODAL_CORTE_BASE_H * (21.0 / 29.7);
+  const scale = isLandscape ? (baseW / 29.7) : (baseW / 21.0);
 
   sheet.style.width = `${baseW}px`;
   sheet.style.height = `${baseH}px`;
@@ -805,8 +814,10 @@ function fitModalCorteZoom() {
   const availH = viewport.clientHeight - 40;
   const availW = viewport.clientWidth - 40;
   if (availH <= 50 || availW <= 50) return;
-  const baseH = MODAL_CORTE_BASE_H;
-  const baseW = baseH * (21.0 / 29.7);
+  const m = activeGenTemplate.matriz_a4 || {};
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+  const baseH = isLandscape ? MODAL_CORTE_BASE_H * (21.0 / 29.7) : MODAL_CORTE_BASE_H;
+  const baseW = isLandscape ? MODAL_CORTE_BASE_H : MODAL_CORTE_BASE_H * (21.0 / 29.7);
   const zoomH = availH / baseH;
   const zoomW = availW / baseW;
   const fitVal = Math.min(zoomH, zoomW);
@@ -830,8 +841,10 @@ function applyModalCorteZoomTransform() {
     sheet.style.transform = `scale(${modalCorteZoom})`;
     sheet.style.transformOrigin = 'center top';
     
-    const baseW = MODAL_CORTE_BASE_H * (21.0 / 29.7);
-    const baseH = MODAL_CORTE_BASE_H;
+    const m = (activeGenTemplate && activeGenTemplate.matriz_a4) || {};
+    const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+    const baseH = isLandscape ? MODAL_CORTE_BASE_H * (21.0 / 29.7) : MODAL_CORTE_BASE_H;
+    const baseW = isLandscape ? MODAL_CORTE_BASE_H : MODAL_CORTE_BASE_H * (21.0 / 29.7);
     
     const scaledH = baseH * modalCorteZoom;
     const extraH = scaledH > baseH ? (scaledH - baseH) + 40 : 20;
@@ -1001,7 +1014,7 @@ function changePage(delta) {
 // RENDERIZADO DEL PLIEGO HOJA A4 (PREVISUALIZACIÓN Y VISTA PREVIA)
 // =========================================================================
 
-// Conversión unificada de dimensiones de plantilla a milímetros reales (A4: 210 x 297 mm)
+// Conversión unificada de dimensiones de plantilla a milímetros reales (A4: 210 x 297 mm o 297 x 210 mm)
 function getTemplateMmDimensions(template) {
   if (!template) {
     return {
@@ -1013,13 +1026,20 @@ function getTemplateMmDimensions(template) {
       gapY: 5,
       cols: 2,
       rows: 4,
+      isLandscape: false,
+      sheetW_mm: 210,
+      sheetH_mm: 297,
       m: {}
     };
   }
 
   const m = template.matriz_a4 || {};
-  const cols = parseInt(m.columnas, 10) || 2;
-  const rows = parseInt(m.filas, 10) || 4;
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+  const sheetW_mm = isLandscape ? 297 : 210;
+  const sheetH_mm = isLandscape ? 210 : 297;
+
+  const cols = parseInt(m.columnas, 10) || (isLandscape ? 4 : 2);
+  const rows = parseInt(m.filas, 10) || (isLandscape ? 2 : 4);
 
   let rawW = parseFloat(template.ancho) || 10.0;
   let rawH = parseFloat(template.alto) || 5.0;
@@ -1037,7 +1057,7 @@ function getTemplateMmDimensions(template) {
   const gapX = rawGapX > 5 ? rawGapX : rawGapX * 10;
   const gapY = rawGapY > 5 ? rawGapY : rawGapY * 10;
 
-  return { labelW_mm, labelH_mm, mTop, mLeft, gapX, gapY, cols, rows, m };
+  return { labelW_mm, labelH_mm, mTop, mLeft, gapX, gapY, cols, rows, isLandscape, sheetW_mm, sheetH_mm, m };
 }
 
 // Ajuste dinámico de escala del pliego A4 al viewport visible para evitar desbordes
@@ -1051,9 +1071,15 @@ function fitGenSheetToViewport() {
   const availH = viewport.clientHeight - 24;
   if (availW <= 0 || availH <= 0) return;
 
+  const m = (activeGenTemplate && activeGenTemplate.matriz_a4) || {};
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+
   // Medidas de hoja A4 a 96 DPI: 210mm = 793.7px, 297mm = 1122.5px
-  const baseW = 793.7;
-  const baseH = 1122.5;
+  const baseW = isLandscape ? 1122.5 : 793.7;
+  const baseH = isLandscape ? 793.7 : 1122.5;
+
+  sheet.style.width = isLandscape ? '297mm' : '210mm';
+  sheet.style.height = isLandscape ? '210mm' : '297mm';
 
   const scale = Math.min(availW / baseW, availH / baseH);
 
@@ -1243,7 +1269,11 @@ function renderGuiaCorteLines(container, cols, rows, mLeft, mTop, labelW_mm, lab
   const cConfig = getActiveCorteConfig();
   const lineStyle = `${cConfig.corte_grosor}px ${cConfig.corte_tipo} ${cConfig.corte_color}`;
 
-  // Líneas Horizontales (de borde a borde de la hoja A4: X = 0 a X = 210mm)
+  const dims = getTemplateMmDimensions(activeGenTemplate);
+  const sheetW_mm = dims.sheetW_mm || 210;
+  const sheetH_mm = dims.sheetH_mm || 297;
+
+  // Líneas Horizontales (de borde a borde de la hoja A4: X = 0 a X = sheetW_mm)
   if (cConfig.corte_h_activo) {
     const yPositions = [];
     const gridH_mm = rows * labelH_mm + (rows - 1) * gapY;
@@ -1256,7 +1286,7 @@ function renderGuiaCorteLines(container, cols, rows, mLeft, mTop, labelW_mm, lab
       if (topProj >= 0) yPositions.push(topProj);
 
       const bottomProj = mTop + gridH_mm + gapY / 2;
-      if (bottomProj <= 297) yPositions.push(bottomProj);
+      if (bottomProj <= sheetH_mm) yPositions.push(bottomProj);
     } else {
       // Modo 'pegadas': 2 líneas en cada separación (bordes superior e inferior de cada etiqueta)
       for (let r = 0; r < rows; r++) {
@@ -1271,14 +1301,14 @@ function renderGuiaCorteLines(container, cols, rows, mLeft, mTop, labelW_mm, lab
       hLine.className = 'absolute pointer-events-none';
       hLine.style.left = '0px';
       hLine.style.top = `${yMm}mm`;
-      hLine.style.width = '210mm';
+      hLine.style.width = `${sheetW_mm}mm`;
       hLine.style.height = '0px';
       hLine.style.borderTop = lineStyle;
       container.appendChild(hLine);
     });
   }
 
-  // Líneas Verticales (de borde a borde de la hoja A4: Y = 0 a Y = 297mm)
+  // Líneas Verticales (de borde a borde de la hoja A4: Y = 0 a Y = sheetH_mm)
   if (cConfig.corte_v_activo) {
     const xPositions = [];
     const gridW_mm = cols * labelW_mm + (cols - 1) * gapX;
@@ -1291,7 +1321,7 @@ function renderGuiaCorteLines(container, cols, rows, mLeft, mTop, labelW_mm, lab
       if (leftProj >= 0) xPositions.push(leftProj);
 
       const rightProj = mLeft + gridW_mm + gapX / 2;
-      if (rightProj <= 210) xPositions.push(rightProj);
+      if (rightProj <= sheetW_mm) xPositions.push(rightProj);
     } else {
       // Modo 'pegadas': 2 líneas en cada separación (bordes izquierdo y derecho de cada etiqueta)
       for (let c = 0; c < cols; c++) {
@@ -1307,7 +1337,7 @@ function renderGuiaCorteLines(container, cols, rows, mLeft, mTop, labelW_mm, lab
       vLine.style.left = `${xMm}mm`;
       vLine.style.top = '0px';
       vLine.style.width = '0px';
-      vLine.style.height = '297mm';
+      vLine.style.height = `${sheetH_mm}mm`;
       vLine.style.borderLeft = lineStyle;
       container.appendChild(vLine);
     });
@@ -1465,6 +1495,11 @@ function exportarPDF() {
 
       // Guías de corte completas para impresión vectorial
       let cutLinesHtml = '';
+      const m = activeGenTemplate.matriz_a4 || {};
+      const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+      const sheetW_mm = isLandscape ? 297 : 210;
+      const sheetH_mm = isLandscape ? 210 : 297;
+
       if (includeGuiaCorte) {
         const cConfig = getActiveCorteConfig();
         const lineStyle = `${cConfig.corte_grosor}px ${cConfig.corte_tipo} ${cConfig.corte_color}`;
@@ -1481,7 +1516,7 @@ function exportarPDF() {
             if (topProj >= 0) yPositions.push(topProj);
 
             const bottomProj = mTop + gridH_mm + gapY / 2;
-            if (bottomProj <= 297) yPositions.push(bottomProj);
+            if (bottomProj <= sheetH_mm) yPositions.push(bottomProj);
           } else {
             // Modo 'pegadas'
             for (let r = 0; r < rows; r++) {
@@ -1492,7 +1527,7 @@ function exportarPDF() {
 
           const uniqueY = Array.from(new Set(yPositions.map(y => Math.round(y * 100) / 100)));
           uniqueY.forEach(yMm => {
-            cutLinesHtml += `<div style="position: absolute; left: 0px; top: ${yMm}mm; width: 210mm; height: 0px; border-top: ${lineStyle};"></div>`;
+            cutLinesHtml += `<div style="position: absolute; left: 0px; top: ${yMm}mm; width: ${sheetW_mm}mm; height: 0px; border-top: ${lineStyle};"></div>`;
           });
         }
 
@@ -1508,7 +1543,7 @@ function exportarPDF() {
             if (leftProj >= 0) xPositions.push(leftProj);
 
             const rightProj = mLeft + gridW_mm + gapX / 2;
-            if (rightProj <= 210) xPositions.push(rightProj);
+            if (rightProj <= sheetW_mm) xPositions.push(rightProj);
           } else {
             // Modo 'pegadas'
             for (let c = 0; c < cols; c++) {
@@ -1519,7 +1554,7 @@ function exportarPDF() {
 
           const uniqueX = Array.from(new Set(xPositions.map(x => Math.round(x * 100) / 100)));
           uniqueX.forEach(xMm => {
-            cutLinesHtml += `<div style="position: absolute; left: ${xMm}mm; top: 0px; width: 0px; height: 297mm; border-left: ${lineStyle};"></div>`;
+            cutLinesHtml += `<div style="position: absolute; left: ${xMm}mm; top: 0px; width: 0px; height: ${sheetH_mm}mm; border-left: ${lineStyle};"></div>`;
           });
         }
       }
@@ -1542,7 +1577,7 @@ function exportarPDF() {
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@400;600;700;800;900&family=Oswald:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     @page {
-      size: A4 portrait;
+      size: A4 ${isLandscape ? 'landscape' : 'portrait'};
       margin: 0;
     }
     * {
@@ -1558,8 +1593,8 @@ function exportarPDF() {
     }
     ${customFontFaceStyles}
     .page-a4 {
-      width: 210mm;
-      height: 297mm;
+      width: ${sheetW_mm}mm;
+      height: ${sheetH_mm}mm;
       position: relative;
       margin: 20px auto;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);

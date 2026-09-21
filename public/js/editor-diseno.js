@@ -408,6 +408,11 @@ function renderCanvas() {
   const rawWidth = anchoCm * basePxPerCm;
   const rawHeight = altoCm * basePxPerCm;
 
+  const dimBadge = document.getElementById('canvas-dimension-badge');
+  if (dimBadge) {
+    dimBadge.textContent = `${anchoCm.toFixed(1)}cm x ${altoCm.toFixed(1)}cm`;
+  }
+
   let autoFitScale = 1.0;
   if (viewport) {
     const maxW = Math.max(250, viewport.clientWidth - 80);

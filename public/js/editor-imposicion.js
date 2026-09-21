@@ -31,7 +31,8 @@ function applyTab1ZoomTransform() {
   if (sheet) {
     sheet.style.transform = `scale(${tab1Zoom})`;
     sheet.style.transformOrigin = 'center top';
-    sheet.style.marginBottom = tab1Zoom > 1.0 ? `${(TAB1_BASE_SHEET_HEIGHT * tab1Zoom) - TAB1_BASE_SHEET_HEIGHT}px` : '0px';
+    const currentH = parseFloat(sheet.style.height) || TAB1_BASE_SHEET_HEIGHT;
+    sheet.style.marginBottom = tab1Zoom > 1.0 ? `${(currentH * tab1Zoom) - currentH}px` : '0px';
   }
 }
 
@@ -53,6 +54,11 @@ function updateLabelDimensions() {
 
   currentTemplate.ancho = parseFloat(ancho.toFixed(1));
   currentTemplate.alto = parseFloat(alto.toFixed(1));
+
+  const dimBadge = document.getElementById('canvas-dimension-badge');
+  if (dimBadge) {
+    dimBadge.textContent = `${currentTemplate.ancho.toFixed(1)}cm x ${currentTemplate.alto.toFixed(1)}cm`;
+  }
 
   // Renderizar pliego A4 Tab 1 y refrescar lienzo 2D Tab 2 si está disponible
   renderMatrizA4Tab1();
@@ -324,7 +330,11 @@ function renderMatrizA4Tab1() {
 
   const totalLabels = cols * rows;
 
-  const a4Area = 21.0 * 29.7;
+  const isLandscape = m.hoja_orientacion === 'horizontal' || m.hoja_orientacion === 'landscape';
+  const sheetW_cm = isLandscape ? 29.7 : 21.0;
+  const sheetH_cm = isLandscape ? 21.0 : 29.7;
+
+  const a4Area = sheetW_cm * sheetH_cm;
   const usedArea = totalLabels * labelW_cm * labelH_cm;
   const efficiencyPct = Math.min(100, Math.max(0, (usedArea / a4Area) * 100)).toFixed(1);
   const wastePct = Math.max(0, 100 - parseFloat(efficiencyPct)).toFixed(1);
@@ -332,14 +342,23 @@ function renderMatrizA4Tab1() {
   const bCount = document.getElementById('tab1-badge-count');
   const bEff = document.getElementById('tab1-badge-efficiency');
   const bWaste = document.getElementById('tab1-badge-waste');
+  const sheetDimLabel = document.getElementById('tab1-sheet-dimension-label');
 
   if (bCount) bCount.textContent = `${totalLabels} etiquetas / pliego`;
   if (bEff) bEff.textContent = `Aprovechamiento: ${efficiencyPct}%`;
   if (bWaste) bWaste.textContent = `Desperdicio: ${wastePct}%`;
+  if (sheetDimLabel) sheetDimLabel.textContent = `${sheetW_cm.toFixed(1)} x ${sheetH_cm.toFixed(1)} cm (${isLandscape ? 'Horizontal' : 'Vertical'})`;
 
-  const baseSheetH = TAB1_BASE_SHEET_HEIGHT;
-  const baseSheetW = baseSheetH * (21.0 / 29.7);
-  const scale = baseSheetW / 21.0;
+  let baseSheetW, baseSheetH, scale;
+  if (isLandscape) {
+    baseSheetW = TAB1_BASE_SHEET_HEIGHT;
+    baseSheetH = TAB1_BASE_SHEET_HEIGHT * (21.0 / 29.7);
+    scale = baseSheetW / 29.7;
+  } else {
+    baseSheetH = TAB1_BASE_SHEET_HEIGHT;
+    baseSheetW = TAB1_BASE_SHEET_HEIGHT * (21.0 / 29.7);
+    scale = baseSheetW / 21.0;
+  }
 
   sheet.style.width = `${baseSheetW}px`;
   sheet.style.height = `${baseSheetH}px`;
