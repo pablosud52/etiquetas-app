@@ -157,6 +157,7 @@ function openDatabase() {
       console.error("Error al conectar a SQLite:", err.message);
     } else {
       console.log(`Base de datos SQLite conectada en: ${dbPath}`);
+      currentDb.run('PRAGMA busy_timeout = 5000;');
     }
   });
   initSchema(currentDb);

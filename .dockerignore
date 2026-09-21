@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist
+.git
+.gitignore
+.dockerignore
+.agagent
+.github
+*.db
+*.sqlite
+uploads
+data
+scratch/
+build-exe.js
