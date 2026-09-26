@@ -4,7 +4,7 @@
   "description": "RotulA4 - Sistema de Generación e Impresión de Etiquetas Web",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --preserve-symlinks server.js",
     "build": "node build-exe.js"
   },
   "keywords": [],
