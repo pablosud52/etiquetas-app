@@ -619,8 +619,8 @@ app.get('/api/backup/export', async (req, res) => {
     const fechaCarga = await getConfigValue('fecha_ultima_carga');
     const diasGracia = await getConfigValue('dias_gracia_obsolescencia');
     const manifest = {
-      app: 'Etiquetas de Precios',
-      version: '1.0.0',
+      app: 'RotulA4',
+      version: '2.0.0',
       fecha_exportacion: new Date().toISOString(),
       configuraciones: {
         dias_gracia_obsolescencia: diasGracia,
@@ -631,7 +631,7 @@ app.get('/api/backup/export', async (req, res) => {
 
     const zipBuffer = zip.toBuffer();
     const dateStamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const fileName = `backup_etiquetas_${dateStamp}.zip`;
+    const fileName = `backup_rotula4_${dateStamp}.zip`;
 
     res.set({
       'Content-Type': 'application/zip',

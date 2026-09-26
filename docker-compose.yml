@@ -1,10 +1,10 @@
 version: '3.8'
 
 services:
-  etiquetas-app:
-    image: ghcr.io/pablosud52/etiquetas-app:latest
+  rotula4:
+    image: ghcr.io/pablosud52/rotula4:latest
     build: .
-    container_name: etiquetas-app
+    container_name: rotula4
     restart: unless-stopped
     ports:
       - "1010:8080"
